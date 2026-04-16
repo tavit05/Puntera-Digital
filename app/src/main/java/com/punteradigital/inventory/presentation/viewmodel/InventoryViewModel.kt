@@ -79,6 +79,30 @@ class InventoryViewModel @Inject constructor(
     val totalDispatched = dao.getTotalDispatchedCount()
     val totalMovements = dao.getTotalMovementCount()
 
+    // ═══ Rack Map Flows ═══
+    val rackOccupancy = dao.getProductCountByLocation()
+
+    // ═══ QR History Flows ═══
+    val entryMovements = dao.getEntryMovements()
+
+    // ═══ QR Search State ═══
+    private val _qrSearchResults = MutableStateFlow<List<ProductEntity>>(emptyList())
+    val qrSearchResults: StateFlow<List<ProductEntity>> = _qrSearchResults.asStateFlow()
+
+    fun searchQRByUuid(query: String) {
+        viewModelScope.launch {
+            if (query.isBlank()) {
+                _qrSearchResults.value = emptyList()
+                return@launch
+            }
+            _qrSearchResults.value = dao.searchProductsByUuid(query)
+        }
+    }
+
+    suspend fun getProductsAtRack(location: String): List<ProductEntity> {
+        return dao.getProductsAtLocation(location)
+    }
+
     init {
         // Auto-sync when connectivity restores
         viewModelScope.launch {
@@ -106,6 +130,13 @@ class InventoryViewModel @Inject constructor(
 
     fun setCurrentUser(user: UserEntity) {
         _currentUser.value = user
+    }
+
+    fun logout() {
+        _currentUser.value = null
+        _uiState.value = InventoryUiState.Idle
+        _dispatchBatch.value = emptyList()
+        _currentOrigin.value = Origin.FOOT_SAFE
     }
 
     fun resetUiState() {

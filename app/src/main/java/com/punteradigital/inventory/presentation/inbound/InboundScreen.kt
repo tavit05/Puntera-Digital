@@ -1,7 +1,5 @@
 package com.punteradigital.inventory.presentation.inbound
 
-import kotlinx.coroutines.delay
-
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,7 +36,7 @@ fun EntryScreen(viewModel: InventoryViewModel) {
     val user by viewModel.currentUser.collectAsState()
     val origin by viewModel.currentOrigin.collectAsState()
 
-    // Form state
+    // Form state — origin, model, size PERSIST between entries
     var selectedOrigin by remember { mutableStateOf(Origin.FOOT_SAFE) }
     var entryTypeExpanded by remember { mutableStateOf(false) }
     var selectedEntryType by remember { mutableStateOf("Producción") }
@@ -58,6 +56,14 @@ fun EntryScreen(viewModel: InventoryViewModel) {
     var totalQuantity by remember { mutableStateOf("") }
     var remainderMode by remember { mutableStateOf(RemainderMode.LOOSE) }
 
+    // Rack location
+    var rackExpanded by remember { mutableStateOf(false) }
+    var selectedRack by remember { mutableStateOf("A1") }
+    val rackLocations = listOf("A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3", "PISO")
+
+    // Confirmation dialog state
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
     // Auto-boxing calculation
     val totalQty = totalQuantity.toIntOrNull() ?: 0
     val pairsPerBox = childCount.toIntOrNull() ?: BusinessRules.DEFAULT_MASTER_QTY
@@ -67,16 +73,6 @@ fun EntryScreen(viewModel: InventoryViewModel) {
     // Update theme on origin change
     LaunchedEffect(selectedOrigin) {
         viewModel.setOrigin(selectedOrigin)
-    }
-
-    // Auto-reset form on success
-    LaunchedEffect(uiState) {
-        if (uiState is InventoryUiState.SuccessEntry) {
-            delay(3000)
-            viewModel.resetUiState()
-            lot = ""
-            totalQuantity = ""
-        }
     }
 
     Scaffold(
@@ -228,6 +224,30 @@ fun EntryScreen(viewModel: InventoryViewModel) {
                                 label = "Lote",
                                 modifier = Modifier.weight(1f)
                             )
+                        }
+
+                        // ═══ RACK LOCATION ═══
+                        ExposedDropdownMenuBox(
+                            expanded = rackExpanded,
+                            onExpandedChange = { rackExpanded = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            KineticTextField(
+                                value = "📍 Rack: $selectedRack",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = "Ubicación en Rack",
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rackExpanded) },
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(expanded = rackExpanded, onDismissRequest = { rackExpanded = false }) {
+                                rackLocations.forEach { rack ->
+                                    DropdownMenuItem(
+                                        text = { Text(if (rack == "PISO") "📦 PISO (Sin rack)" else "📍 $rack") },
+                                        onClick = { selectedRack = rack; rackExpanded = false }
+                                    )
+                                }
+                            }
                         }
 
                         // ═══ TOTAL QUANTITY ═══
@@ -421,20 +441,7 @@ fun EntryScreen(viewModel: InventoryViewModel) {
                 
                 KineticButton(
                     text = if (uiState is InventoryUiState.Loading) "PROCESANDO..." else "🖨 REGISTRAR E IMPRIMIR",
-                    onClick = {
-                        viewModel.evaluateSmartEntry(
-                            origin = selectedOrigin,
-                            model = selectedModel,
-                            size = selectedSize,
-                            lot = lot,
-                            entryType = selectedEntryType,
-                            totalQuantity = if (totalQty > 0) totalQty else pairsPerBox,
-                            isMasterBox = isMasterBox,
-                            childCount = pairsPerBox,
-                            remainderMode = remainderMode,
-                            userId = user?.id ?: "UNKNOWN"
-                        )
-                    },
+                    onClick = { showConfirmDialog = true },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
                     enabled = isButtonEnabled,
                     isLoading = uiState is InventoryUiState.Loading,
@@ -443,6 +450,63 @@ fun EntryScreen(viewModel: InventoryViewModel) {
                 )
 
                 Spacer(Modifier.height(80.dp)) // Bottom bar clearance
+            }
+
+            // ═══ CONFIRMATION DIALOG ═══
+            if (showConfirmDialog) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmDialog = false },
+                    icon = {
+                        Icon(
+                            Icons.Default.Checklist,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    },
+                    title = { Text("Confirmar Registro", fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Verifica los datos antes de registrar:", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            ConfirmRow("Origen", selectedOrigin.displayName)
+                            ConfirmRow("Modelo", selectedModel)
+                            ConfirmRow("Talla", selectedSize)
+                            ConfirmRow("Lote", lot)
+                            ConfirmRow("Rack", selectedRack)
+                            ConfirmRow("Cantidad", "$totalQty unidades")
+                            if (isMasterBox && autoBox != null) {
+                                ConfirmRow("Cajas", "${autoBox.fullBoxes} × $pairsPerBox pares")
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        KineticButton(
+                            text = "✅ CONFIRMAR",
+                            onClick = {
+                                showConfirmDialog = false
+                                viewModel.evaluateSmartEntry(
+                                    origin = selectedOrigin,
+                                    model = selectedModel,
+                                    size = selectedSize,
+                                    lot = lot,
+                                    entryType = selectedEntryType,
+                                    totalQuantity = if (totalQty > 0) totalQty else pairsPerBox,
+                                    isMasterBox = isMasterBox,
+                                    childCount = pairsPerBox,
+                                    remainderMode = remainderMode,
+                                    userId = user?.id ?: "UNKNOWN"
+                                )
+                            },
+                            type = ButtonType.PRIMARY
+                        )
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmDialog = false }) {
+                            Text("CANCELAR")
+                        }
+                    }
+                )
             }
 
             // ═══ SUCCESS OVERLAY ═══
@@ -456,6 +520,7 @@ fun EntryScreen(viewModel: InventoryViewModel) {
                     warning = state.warning,
                     onDismiss = { 
                         viewModel.resetUiState()
+                        // Only reset lot and quantity — keep origin, model, size
                         lot = ""
                         totalQuantity = ""
                     }
@@ -905,5 +970,16 @@ fun SmartSuggestionOverlay(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ConfirmRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
     }
 }

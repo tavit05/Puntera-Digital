@@ -175,11 +175,40 @@ interface InventoryDao {
     /** Total movement records */
     @Query("SELECT COUNT(*) FROM movements")
     fun getTotalMovementCount(): Flow<Int>
+
+    // ═══════════════════════════════════════════════════════════════
+    // RACK MAP QUERIES
+    // ═══════════════════════════════════════════════════════════════
+
+    /** Count of available products at each location */
+    @Query("SELECT location, COUNT(*) as count FROM products WHERE status = 'AVAILABLE' GROUP BY location")
+    fun getProductCountByLocation(): Flow<List<LocationCount>>
+
+    /** Products at a specific rack location */
+    @Query("SELECT * FROM products WHERE location = :location AND status = 'AVAILABLE' ORDER BY model, size")
+    suspend fun getProductsAtLocation(location: String): List<ProductEntity>
+
+    // ═══════════════════════════════════════════════════════════════
+    // QR HISTORY QUERIES
+    // ═══════════════════════════════════════════════════════════════
+
+    /** Search products by partial UUID */
+    @Query("SELECT * FROM products WHERE uuid LIKE '%' || :query || '%' ORDER BY createdAt DESC LIMIT 50")
+    suspend fun searchProductsByUuid(query: String): List<ProductEntity>
+
+    /** Get all entry movements grouped by date (for QR history) */
+    @Query("SELECT * FROM movements WHERE type = 'IN' ORDER BY timestamp DESC")
+    fun getEntryMovements(): Flow<List<MovementEntity>>
 }
 
 data class BatchStatus(
     val batch: String,
     val model: String,
     val size: String,
+    val count: Int
+)
+
+data class LocationCount(
+    val location: String,
     val count: Int
 )

@@ -35,7 +35,8 @@ import java.util.*
 @Composable
 fun MuestrasScreen(
     viewModel: InventoryViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToScanner: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val user by viewModel.currentUser.collectAsState()
@@ -141,12 +142,36 @@ fun MuestrasScreen(
                     title = { Text("Registrar Muestra", fontWeight = FontWeight.Bold) },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            KineticTextField(
-                                value = newUuid,
-                                onValueChange = { newUuid = it.uppercase() },
-                                label = "UUID del Producto *",
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
+                            // UUID with scanner button
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                KineticTextField(
+                                    value = newUuid,
+                                    onValueChange = { newUuid = it.uppercase() },
+                                    label = "UUID del Producto *",
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                FilledIconButton(
+                                    onClick = {
+                                        showNewMuestraDialog = false
+                                        onNavigateToScanner()
+                                    },
+                                    colors = IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MuestraTeal,
+                                        contentColor = Color.White
+                                    ),
+                                    modifier = Modifier.size(48.dp)
+                                ) {
+                                    Icon(Icons.Default.QrCodeScanner, "Escanear QR", modifier = Modifier.size(24.dp))
+                                }
+                            }
+                            Text(
+                                "Escanea el QR del calzado o ingresa el UUID manualmente",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
                             KineticTextField(
                                 value = newCliente,

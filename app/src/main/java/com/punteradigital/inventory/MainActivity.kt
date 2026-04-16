@@ -43,6 +43,8 @@ import com.punteradigital.inventory.presentation.settings.PrinterConfigScreen
 import com.punteradigital.inventory.presentation.settings.SettingsScreen
 import com.punteradigital.inventory.presentation.settings.CatalogScreen
 import com.punteradigital.inventory.presentation.settings.CatalogEditScreen
+import com.punteradigital.inventory.presentation.settings.QRHistoryScreen
+import com.punteradigital.inventory.presentation.settings.RackMapScreen
 import com.punteradigital.inventory.presentation.traceability.TraceabilityScreen
 import com.punteradigital.inventory.presentation.viewmodel.InventoryViewModel
 import com.punteradigital.inventory.presentation.components.*
@@ -97,6 +99,8 @@ class MainActivity : ComponentActivity() {
 @Serializable object CatalogRoute
 @Serializable data class CatalogEditRoute(val itemId: String?)
 @Serializable object PrinterConfigRoute
+@Serializable object QRHistoryRoute
+@Serializable object RackMapRoute
 
 @Composable
 fun PunteraApp(
@@ -142,6 +146,18 @@ fun PunteraApp(
                 },
                 onNavigateToPrinter = {
                     navController.navigate(PrinterConfigRoute)
+                },
+                onNavigateToQRHistory = {
+                    navController.navigate(QRHistoryRoute)
+                },
+                onNavigateToRackMap = {
+                    navController.navigate(RackMapRoute)
+                },
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(Login) {
+                        popUpTo(MainHub) { inclusive = true }
+                    }
                 }
             )
         }
@@ -168,7 +184,10 @@ fun PunteraApp(
         composable<MuestrasRoute> {
             MuestrasScreen(
                 viewModel = viewModel,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToScanner = {
+                    navController.navigate(ScannerRoute("MUESTRA_LOOKUP", "MANUAL"))
+                }
             )
         }
         composable<RefillMasterBoxRoute> {
@@ -182,6 +201,14 @@ fun PunteraApp(
                 onBack = { navController.popBackStack() },
                 onNavigateToCatalog = { navController.navigate(CatalogRoute) },
                 onNavigateToPrinter = { navController.navigate(PrinterConfigRoute) },
+                onNavigateToQRHistory = { navController.navigate(QRHistoryRoute) },
+                onNavigateToRackMap = { navController.navigate(RackMapRoute) },
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(Login) {
+                        popUpTo(MainHub) { inclusive = true }
+                    }
+                },
                 themePreferences = themePreferences
             )
         }
@@ -207,6 +234,18 @@ fun PunteraApp(
                 onBack = { navController.popBackStack() }
             )
         }
+        composable<QRHistoryRoute> {
+            QRHistoryScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<RackMapRoute> {
+            RackMapScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
 
@@ -220,11 +259,13 @@ fun MainDashboard(
     onNavigateToMuestras: () -> Unit,
     onNavigateToRefill: () -> Unit,
     onNavigateToCatalog: () -> Unit,
-    onNavigateToPrinter: () -> Unit
+    onNavigateToPrinter: () -> Unit,
+    onNavigateToQRHistory: () -> Unit,
+    onNavigateToRackMap: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val origin by viewModel.currentOrigin.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
-    var showEditSheet by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     val navItems = listOf(
@@ -289,17 +330,14 @@ fun MainDashboard(
                     4 -> SettingsScreen(
                         onNavigateToCatalog = onNavigateToCatalog,
                         onNavigateToPrinter = onNavigateToPrinter,
+                        onNavigateToQRHistory = onNavigateToQRHistory,
+                        onNavigateToRackMap = onNavigateToRackMap,
+                        onLogout = onLogout,
                         themePreferences = themePreferences
                     )
                 }
             }
         }
-    }
-
-    if (showEditSheet) {
-        com.punteradigital.inventory.presentation.components.GlobalEditPanelBottomSheet(
-            onDismissRequest = { showEditSheet = false }
-        )
     }
 }
 

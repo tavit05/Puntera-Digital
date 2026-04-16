@@ -6,11 +6,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,7 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.punteradigital.inventory.data.local.ThemePreferences
+import com.punteradigital.inventory.presentation.components.KineticButton
 import com.punteradigital.inventory.presentation.components.KineticCard
+import com.punteradigital.inventory.presentation.components.ButtonType
 import com.punteradigital.inventory.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,6 +29,9 @@ fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onNavigateToCatalog: () -> Unit,
     onNavigateToPrinter: () -> Unit,
+    onNavigateToQRHistory: () -> Unit = {},
+    onNavigateToRackMap: () -> Unit = {},
+    onLogout: () -> Unit = {},
     themePreferences: ThemePreferences? = null
 ) {
     if (onBack != null) {
@@ -61,6 +65,9 @@ fun SettingsScreen(
                 modifier = Modifier.padding(padding),
                 onNavigateToCatalog = onNavigateToCatalog,
                 onNavigateToPrinter = onNavigateToPrinter,
+                onNavigateToQRHistory = onNavigateToQRHistory,
+                onNavigateToRackMap = onNavigateToRackMap,
+                onLogout = onLogout,
                 themePreferences = themePreferences
             )
         }
@@ -90,6 +97,9 @@ fun SettingsScreen(
             SettingsContent(
                 onNavigateToCatalog = onNavigateToCatalog,
                 onNavigateToPrinter = onNavigateToPrinter,
+                onNavigateToQRHistory = onNavigateToQRHistory,
+                onNavigateToRackMap = onNavigateToRackMap,
+                onLogout = onLogout,
                 themePreferences = themePreferences
             )
         }
@@ -101,8 +111,13 @@ fun SettingsContent(
     modifier: Modifier = Modifier,
     onNavigateToCatalog: () -> Unit,
     onNavigateToPrinter: () -> Unit,
+    onNavigateToQRHistory: () -> Unit,
+    onNavigateToRackMap: () -> Unit,
+    onLogout: () -> Unit,
     themePreferences: ThemePreferences? = null
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -159,6 +174,20 @@ fun SettingsContent(
                     onClick = onNavigateToPrinter
                 )
                 SettingsItem(
+                    icon = Icons.Default.QrCode,
+                    iconColor = Color(0xFF42A5F5),
+                    label = "Historial de QR",
+                    desc = "Búsqueda UUID · Reimpresión · PDF",
+                    onClick = onNavigateToQRHistory
+                )
+                SettingsItem(
+                    icon = Icons.Default.GridView,
+                    iconColor = DispatchGreen,
+                    label = "Mapa de Racks",
+                    desc = "Visualización de ocupación del almacén",
+                    onClick = onNavigateToRackMap
+                )
+                SettingsItem(
                     icon = Icons.Default.CloudSync,
                     iconColor = RefillBlue,
                     label = "Sincronización",
@@ -174,7 +203,8 @@ fun SettingsContent(
                     icon = Icons.Default.Lock,
                     iconColor = CriticalRed,
                     label = "Cerrar Sesión",
-                    desc = "admin@punteradigital.com"
+                    desc = "admin@punteradigital.com",
+                    onClick = { showLogoutDialog = true }
                 )
             }
         }
@@ -189,6 +219,38 @@ fun SettingsContent(
                 Text("Kinetic Architect Engine", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
             }
         }
+    }
+
+    // Logout confirmation dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            icon = {
+                Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = null,
+                    tint = CriticalRed,
+                    modifier = Modifier.size(40.dp)
+                )
+            },
+            title = { Text("Cerrar Sesión", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Estás seguro que deseas cerrar sesión? Tendrás que ingresar tu PIN nuevamente.") },
+            confirmButton = {
+                KineticButton(
+                    text = "🚪 CERRAR SESIÓN",
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    },
+                    type = ButtonType.DANGER
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("CANCELAR")
+                }
+            }
+        )
     }
 }
 
