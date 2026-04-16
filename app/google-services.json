@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "699451007595",
+    "project_id": "puntera-digital-d902e",
+    "storage_bucket": "puntera-digital-d902e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:699451007595:android:731ea2864602836412872e",
+        "android_client_info": {
+          "package_name": "com.punteradigital.inventory"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyai1ntgF1x0_TwdAYgPoLIb8yGDzogJg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

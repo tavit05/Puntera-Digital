@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puntera Digital — Kinetic Architect</title>
+    <meta name="description" content="Industrial warehouse management system with Industry 5.0 design principles">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1 class="page-title">⚡ Puntera Digital</h1>
+<p class="subtitle">Kinetic Architect — Industry 5.0 Warehouse System</p>
+
+<div class="tab-nav">
+    <button class="tab-btn active" onclick="showScreen('home')">🏠 Inicio</button>
+    <button class="tab-btn" onclick="showScreen('entry')">📋 Entrada</button>
+    <button class="tab-btn" onclick="showScreen('movements')">🔄 Movimientos</button>
+    <button class="tab-btn" onclick="showScreen('dispatch')">🚚 Despacho</button>
+    <button class="tab-btn" onclick="showScreen('muestras')">🏪 Muestras</button>
+    <button class="tab-btn" onclick="showScreen('refill')">📦 Rellenar</button>
+    <button class="tab-btn" onclick="showScreen('trace')">📜 Trazabilidad</button>
+    <button class="tab-btn" onclick="showScreen('settings')">⚙ Config</button>
+</div>
+
+<div class="phone-frame">
+    <div class="status-bar">
+        <span class="time">12:42</span>
+        <span class="icons">📶 🔋 92%</span>
+    </div>
+
+    <!-- ═══════════════ HOME ═══════════════ -->
+    <div class="screen active" id="screen-home">
+        <div class="top-bar">
+            <div class="home-header">
+                <div class="home-hello">Hola, Admin 👋</div>
+                <div class="home-mode">Modo: Foot Safe</div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <!-- Product Hero Card -->
+            <div class="product-hero">
+                <img src="img/boot_black.png" alt="Producto destacado" class="product-hero-img" />
+                <div class="product-hero-overlay">
+                    <div class="product-hero-label">Selección Activa</div>
+                    <div class="product-hero-model">FS300CMFFPBL</div>
+                    <div style="margin-top:6px;">
+                        <span class="pill success" style="font-size:0.5625rem;">LOTE ACTIVO: 2026A</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Counters -->
+            <div class="counter-grid">
+                <div class="counter-card">
+                    <div class="counter-icon g">📦</div>
+                    <div class="counter-value">248</div>
+                    <div class="counter-label">Stock</div>
+                </div>
+                <div class="counter-card">
+                    <div class="counter-icon a">⏸</div>
+                    <div class="counter-value">32</div>
+                    <div class="counter-label">Stand-By</div>
+                </div>
+            </div>
+            <div class="counter-grid">
+                <div class="counter-card">
+                    <div class="counter-icon p">📦</div>
+                    <div class="counter-value">31</div>
+                    <div class="counter-label">Cajas Master</div>
+                </div>
+                <div class="counter-card">
+                    <div class="counter-icon b">🏷</div>
+                    <div class="counter-value">4</div>
+                    <div class="counter-label">Modelos</div>
+                </div>
+            </div>
+
+            <!-- Rack Mini Banner -->
+            <div onclick="showScreen('rack-map')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-container-high);border-radius:var(--radius-xl);margin-bottom:var(--space-sm);cursor:pointer;transition:all 0.2s;">
+                <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:rgba(255,204,2,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;">📍</div>
+                <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.8125rem;">Mapa de Racks</div>
+                    <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">8 racks · 45% ocupación</div>
+                </div>
+                <span style="color:var(--on-surface-variant);font-size:20px;opacity:0.4;">›</span>
+            </div>
+
+            <!-- Efficiency Bar -->
+            <div class="efficiency-bar">
+                <div>
+                    <div class="efficiency-label">EFICIENCIA HOY</div>
+                    <div class="efficiency-value">98.4%</div>
+                </div>
+                <div style="flex:1;">
+                    <div class="progress-bar">
+                        <div class="progress-fill green" style="width:98.4%"></div>
+                    </div>
+                </div>
+                <div class="live-badge">LIVE</div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="qa-btn primary" onclick="showScreen('entry')">➕ Entrada</button>
+                <button class="qa-btn outline-qa" onclick="showScreen('movements')">🔄 Movimientos</button>
+                <button class="qa-btn blue" onclick="showScreen('refill')">📦 Rellenar</button>
+            </div>
+
+            <!-- Recent Movements -->
+            <div class="section-title">Movimientos Recientes</div>
+            <div class="trace-item">
+                <div class="trace-row">
+                    <div class="trace-icon green-bg">📥</div>
+                    <div>
+                        <div class="trace-title">Producción · FS-2026A-42-001</div>
+                        <div class="trace-obs">Caja Master completa con 8 unidades</div>
+                        <div class="trace-date">25/03/2026 10:35 · RACK</div>
+                    </div>
+                </div>
+            </div>
+            <div class="trace-item">
+                <div class="trace-row">
+                    <div class="trace-icon amber-bg">⏸</div>
+                    <div>
+                        <div class="trace-title">Pre-despacho · FS-2026A-42-005</div>
+                        <div class="trace-obs">Stand-By registrado</div>
+                        <div class="trace-date">25/03/2026 09:12 · ZONA_PREDESPACHO</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ENTRY ═══════════════ -->
+    <div class="screen" id="screen-entry">
+        <div class="top-bar">
+            <h2>Registro de Nacimiento</h2>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="card">
+                <div class="card-title">Origen de Mercancía</div>
+                <div class="origin-row">
+                    <div class="origin-chip fs">✓ Foot Safe</div>
+                    <div class="origin-chip sf">Safety</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Datos del Producto</div>
+                <div class="input-group">
+                    <label>Tipo de Entrada</label>
+                    <select class="input-field"><option>Producción</option><option>Ajuste</option><option>Traslado</option></select>
+                </div>
+                <div class="input-group">
+                    <label>Modelo</label>
+                    <select class="input-field"><option>FS300CMFFPBL</option><option>FS302CMN</option><option>FS400BK</option></select>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Talla</label>
+                        <select class="input-field"><option>42</option><option>43</option><option>44</option></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Lote</label>
+                        <input class="input-field" value="2026A" />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>🔢 Cantidad Total a Ingresar *</label>
+                    <input class="input-field" value="25" type="number" />
+                </div>
+                <div class="input-group">
+                    <label>📍 Ubicación Rack *</label>
+                    <select class="input-field" id="entry-rack">
+                        <option value="R-A01">R-A01 — Pasillo A, Nivel 1</option>
+                        <option value="R-A02">R-A02 — Pasillo A, Nivel 2</option>
+                        <option value="R-A03">R-A03 — Pasillo A, Nivel 3</option>
+                        <option value="R-B01">R-B01 — Pasillo B, Nivel 1</option>
+                        <option value="R-B02">R-B02 — Pasillo B, Nivel 2</option>
+                        <option value="R-B03">R-B03 — Pasillo B, Nivel 3</option>
+                        <option value="R-C01">R-C01 — Pasillo C, Nivel 1</option>
+                        <option value="R-C02">R-C02 — Pasillo C, Nivel 2</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Caja Master</div>
+                        <div class="toggle-sub">3 cajas × 8 pares</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="input-group">
+                    <label>Pares por Caja</label>
+                    <input class="input-field" value="8" type="number" />
+                </div>
+
+                <div class="preview-box">
+                    <div class="preview-title">📦 Resumen de Ingreso</div>
+                    <div style="font-size:0.75rem;color:var(--on-surface-variant);margin-bottom:6px;opacity:0.6;">Su ingreso resultará en:</div>
+                    <div class="preview-line green">✅ 3 Cajas Master completas (24 pares)</div>
+                    <div class="preview-line orange">+ 1 par adicional</div>
+
+                    <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:14px;font-weight:600;opacity:0.7;">¿Qué hacer con los pares sobrantes?</div>
+                    <div class="remainder-chips">
+                        <div class="rem-chip active-loose">✓ Pares sueltos</div>
+                        <div class="rem-chip inactive">Caja incompleta</div>
+                    </div>
+                    <div class="rem-desc">Se generarán etiquetas individuales sin caja padre.</div>
+                </div>
+            </div>
+
+            <button class="action-btn primary glow-primary" id="btn-entry-register" onclick="handleEntryRegister()">🖨 REGISTRAR E IMPRIMIR</button>
+
+            <!-- Success Banner (persistent) -->
+            <div class="entry-success-banner" id="entry-success-banner" style="display:none;">
+                <div class="success-banner-icon">✅</div>
+                <div class="success-banner-title">¡Registro Exitoso!</div>
+                <div class="success-banner-detail" id="success-detail"></div>
+                <button class="action-btn primary" onclick="dismissEntrySuccess()" style="margin-top:12px;">➕ NUEVO REGISTRO</button>
+            </div>
+
+            <div style="height:20px"></div>
+        </div>
+
+        <!-- Entry Confirmation Modal -->
+        <div class="modal-overlay" id="modal-entry-confirm">
+            <div class="modal-box animate-in">
+                <div class="modal-icon">📋</div>
+                <div class="modal-title">Confirmar Registro</div>
+                <div class="modal-desc">Verifique los datos antes de confirmar el ingreso.</div>
+                <div class="confirm-summary" id="entry-confirm-summary"></div>
+                <button class="action-btn primary" onclick="confirmEntryRegister()">
+                    ✅ CONFIRMAR E IMPRIMIR
+                </button>
+                <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:4px;opacity:0.5;" onclick="document.getElementById('modal-entry-confirm').classList.remove('show')">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ MOVEMENTS HUB ═══════════════ -->
+    <div class="screen" id="screen-movements">
+        <div class="top-bar">
+            <h2>Módulos de Movimiento</h2>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="hub-card">
+                <div class="hub-header">
+                    <div class="hub-icon amber">⏸</div>
+                    <div>
+                        <div class="hub-title">Stand-By</div>
+                        <div class="hub-sub">Pre-despacho → ZONA_PREDESPACHO</div>
+                    </div>
+                </div>
+                <div class="hub-buttons">
+                    <button class="hub-btn outline">👆 Manual</button>
+                    <button class="hub-btn filled amber">⚡ Ráfaga</button>
+                </div>
+            </div>
+
+            <div class="hub-card" onclick="showScreen('dispatch')">
+                <div class="hub-header">
+                    <div class="hub-icon green">🚚</div>
+                    <div>
+                        <div class="hub-title">Despacho</div>
+                        <div class="hub-sub">Seleccionar items en Stand-By para salida</div>
+                    </div>
+                    <span class="hub-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="hub-card">
+                <div class="hub-header">
+                    <div class="hub-icon purple">⊖</div>
+                    <div>
+                        <div class="hub-title">Calidad / Bajas</div>
+                        <div class="hub-sub">Hidrolizado · Segunda · Daño Físico</div>
+                    </div>
+                </div>
+                <div class="hub-buttons">
+                    <button class="hub-btn outline">👆 Manual</button>
+                    <button class="hub-btn filled purple">⚡ Ráfaga</button>
+                </div>
+            </div>
+
+            <div class="hub-card" onclick="showScreen('muestras')">
+                <div class="hub-header">
+                    <div class="hub-icon teal">🏪</div>
+                    <div>
+                        <div class="hub-title">Muestras Retornables</div>
+                        <div class="hub-sub">Uso comercial, retornable al stock</div>
+                    </div>
+                    <span class="hub-arrow">›</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ DISPATCH ═══════════════ -->
+    <div class="screen" id="screen-dispatch">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Despacho</h2>
+                    <span class="sub" style="color: var(--dispatch);">6 items en Pre-despacho</span>
+                </div>
+                <button class="panic-btn" title="Verificar UUID">📷</button>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="dispatch-header">
+                <span class="dispatch-count">4 de 6 seleccionados</span>
+                <div class="dispatch-actions">
+                    <button>Seleccionar Todo</button>
+                    <button>Deseleccionar</button>
+                </div>
+            </div>
+
+            <div class="dispatch-group-title">FS300CMFFPBL · Lote: 2026A</div>
+            <div class="dispatch-item selected">
+                <div class="checkbox checked">✓</div>
+                <div>
+                    <div class="dispatch-uuid">FS-2026A-42-001</div>
+                    <div class="dispatch-meta">Talla: 42 · 📦 FS-MB-2026A-42-01</div>
+                </div>
+                <span class="origin-badge fs">FS</span>
+            </div>
+            <div class="dispatch-item selected">
+                <div class="checkbox checked">✓</div>
+                <div>
+                    <div class="dispatch-uuid">FS-2026A-42-002</div>
+                    <div class="dispatch-meta">Talla: 42 · 📦 FS-MB-2026A-42-01</div>
+                </div>
+                <span class="origin-badge fs">FS</span>
+            </div>
+            <div class="dispatch-item selected">
+                <div class="checkbox checked">✓</div>
+                <div>
+                    <div class="dispatch-uuid">FS-2026A-43-001</div>
+                    <div class="dispatch-meta">Talla: 43</div>
+                </div>
+                <span class="origin-badge fs">FS</span>
+            </div>
+
+            <div class="dispatch-group-title">FS302CMN · Lote: 2026B</div>
+            <div class="dispatch-item selected">
+                <div class="checkbox checked">✓</div>
+                <div>
+                    <div class="dispatch-uuid">FS-2026B-40-001</div>
+                    <div class="dispatch-meta">Talla: 40</div>
+                </div>
+                <span class="origin-badge fs">FS</span>
+            </div>
+            <div class="dispatch-item">
+                <div class="checkbox"></div>
+                <div>
+                    <div class="dispatch-uuid">FS-2026B-41-001</div>
+                    <div class="dispatch-meta">Talla: 41 · 📦 FS-MB-2026B-41-01</div>
+                </div>
+                <span class="origin-badge fs">FS</span>
+            </div>
+            <div class="dispatch-item">
+                <div class="checkbox"></div>
+                <div>
+                    <div class="dispatch-uuid">FS-2026B-41-002</div>
+                    <div class="dispatch-meta">Talla: 41 · 📦 FS-MB-2026B-41-01</div>
+                </div>
+                <span class="origin-badge fs">FS</span>
+            </div>
+
+            <div class="sticky-bottom">
+                <button class="action-btn green" onclick="document.getElementById('modal-dispatch').classList.add('show')">
+                    🚚 CONFIRMAR SALIDA (4)
+                </button>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-dispatch">
+            <div class="modal-box animate-in">
+                <div class="modal-icon">👤</div>
+                <div class="modal-title">Datos de Salida</div>
+                <div class="modal-desc">Complete los datos antes de confirmar el despacho de 4 unidades.</div>
+                <div class="input-group">
+                    <label>Cliente *</label>
+                    <input class="input-field" placeholder="Nombre del cliente" value="Distribuidora Norte" />
+                </div>
+                <div class="input-group">
+                    <label>Observaciones</label>
+                    <textarea class="input-field" rows="2" placeholder="Ej: Pedido urgente, caja golpeada..." style="resize:none;">Pedido #4521 — Urgente</textarea>
+                </div>
+                <button class="action-btn green" onclick="document.getElementById('modal-dispatch').classList.remove('show')">
+                    ✅ CONFIRMAR SALIDA DEFINITIVA
+                </button>
+                <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:4px;opacity:0.5;" onclick="document.getElementById('modal-dispatch').classList.remove('show')">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ MUESTRAS ═══════════════ -->
+    <div class="screen" id="screen-muestras">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Muestras Retornables</h2>
+                    <span class="sub" style="color: var(--teal);">3 muestras activas</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in" style="position:relative;padding-bottom:80px;">
+            <div class="muestra-card">
+                <div class="muestra-header">
+                    <div>
+                        <div style="font-size:0.875rem;font-weight:700;">FS-2026A-42-005</div>
+                        <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS300CMFFPBL · Talla 42</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:2px;opacity:0.4;">Desde: 20/03/2026 14:30</div>
+                    </div>
+                    <span class="muestra-badge">MUESTRA</span>
+                </div>
+                <div class="muestra-actions">
+                    <button class="muestra-btn outline-green">↩ Retornar</button>
+                    <button class="muestra-btn filled-orange">🛒 Se quedó</button>
+                </div>
+            </div>
+
+            <div class="muestra-card">
+                <div class="muestra-header">
+                    <div>
+                        <div style="font-size:0.875rem;font-weight:700;">FS-2026B-40-003</div>
+                        <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS302CMN · Talla 40</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:2px;opacity:0.4;">Desde: 18/03/2026 09:15</div>
+                    </div>
+                    <span class="muestra-badge">MUESTRA</span>
+                </div>
+                <div class="muestra-actions">
+                    <button class="muestra-btn outline-green">↩ Retornar</button>
+                    <button class="muestra-btn filled-orange">🛒 Se quedó</button>
+                </div>
+            </div>
+
+            <div class="muestra-card">
+                <div class="muestra-header">
+                    <div>
+                        <div style="font-size:0.875rem;font-weight:700;">FS-2026A-44-002</div>
+                        <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS400BK · Talla 44</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:2px;opacity:0.4;">Desde: 15/03/2026 16:40</div>
+                    </div>
+                    <span class="muestra-badge">MUESTRA</span>
+                </div>
+                <div class="muestra-actions">
+                    <button class="muestra-btn outline-green">↩ Retornar</button>
+                    <button class="muestra-btn filled-orange">🛒 Se quedó</button>
+                </div>
+            </div>
+
+            <button class="fab" onclick="openMuestraScanner()">➕ Nueva Muestra</button>
+        </div>
+
+        <!-- Muestras Scanner Modal -->
+        <div class="modal-overlay" id="modal-muestra-scanner">
+            <div class="modal-box animate-in" style="max-width:360px;">
+                <div class="modal-icon">📱</div>
+                <div class="modal-title">Escanear Calzado</div>
+                <div class="modal-desc">Escanee o ingrese el UUID del par para marcar como muestra.</div>
+                <div class="input-group">
+                    <label>UUID del Par *</label>
+                    <div style="display:flex;gap:8px;">
+                        <input class="input-field" id="muestra-scan-uuid" placeholder="FS-2026A-42-001" style="flex:1;" />
+                        <button style="width:48px;height:48px;border-radius:var(--radius-lg);background:var(--teal);border:none;color:white;font-size:20px;cursor:pointer;transition:all 0.2s;" onclick="searchMuestraUUID()" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">🔍</button>
+                    </div>
+                </div>
+                <div id="muestra-scan-result" style="display:none;">
+                    <div class="scan-result-card">
+                        <div class="scan-result-title" id="muestra-result-title">FS-2026A-42-001</div>
+                        <div class="scan-result-detail" id="muestra-result-detail">FS300CMFFPBL · Talla 42 · Lote 2026A</div>
+                        <span class="pill success" style="font-size:0.625rem;margin-top:6px;display:inline-flex;">EN STOCK</span>
+                    </div>
+                    <div class="input-group" style="margin-top:12px;">
+                        <label>Cliente *</label>
+                        <input class="input-field" id="muestra-client" placeholder="Nombre del cliente" />
+                    </div>
+                    <div class="input-group">
+                        <label>Observaciones</label>
+                        <textarea class="input-field" id="muestra-obs" rows="2" placeholder="Motivo de la muestra..." style="resize:none;"></textarea>
+                    </div>
+                    <button class="action-btn teal" onclick="confirmNewMuestra()">
+                        🏪 CONFIRMAR MUESTRA
+                    </button>
+                </div>
+                <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:8px;opacity:0.5;" onclick="document.getElementById('modal-muestra-scanner').classList.remove('show')">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ REFILL ═══════════════ -->
+    <div class="screen" id="screen-refill">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('home')">←</button>
+                <div>
+                    <h2>Rellenar Caja Master</h2>
+                    <span class="sub" style="color: var(--refill-blue);">Paso 2: Agregar Pares</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="master-info-card">
+                <div style="font-size:0.75rem;color:var(--refill-blue);font-weight:700;">📦 Caja Master</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9375rem;font-weight:700;margin:6px 0 2px;">FS-MB-2026A-42-04</div>
+                <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS300CMFFPBL · Talla 42 · Lote 2026A</div>
+                <div class="progress-bar">
+                    <div class="progress-fill blue" style="width:75%"></div>
+                </div>
+                <div style="font-size:0.8125rem;font-weight:700;color:var(--warning);">Tiene 5 de 8 pares. Faltan 3.</div>
+                <div style="font-size:0.75rem;color:var(--refill-blue);margin-top:4px;">Pares a agregar: 2 → Total: 7/8</div>
+            </div>
+
+            <div class="refill-step-card">
+                <div style="font-size:0.8125rem;color:var(--primary-container);font-weight:700;margin-bottom:10px;">Agregar Par Individual</div>
+                <div style="display:flex;gap:8px;">
+                    <input class="input-field" placeholder="UUID del Par" style="flex:1;" />
+                    <button style="width:48px;height:48px;border-radius:var(--radius-lg);background:var(--refill-blue);border:none;color:white;font-size:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">+</button>
+                </div>
+            </div>
+
+            <div class="child-item">
+                <span style="font-size:0.8125rem;font-weight:500;">FS-2026A-42-017</span>
+                <button class="child-remove">✕</button>
+            </div>
+            <div class="child-item">
+                <span style="font-size:0.8125rem;font-weight:500;">FS-2026A-42-019</span>
+                <button class="child-remove">✕</button>
+            </div>
+
+            <button class="action-btn blue">✅ CONFIRMAR RELLENADO (2 pares)</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ TRACEABILITY ═══════════════ -->
+    <div class="screen" id="screen-trace">
+        <div class="top-bar">
+            <h2>Historial de Trazabilidad</h2>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="trace-item" onclick="this.querySelector('.trace-details').classList.toggle('open')">
+                <div class="trace-row">
+                    <div class="trace-icon red-bg">📤</div>
+                    <div style="flex:1;">
+                        <div class="trace-title">Despacho · FS-2026A-42-001</div>
+                        <div class="trace-obs">Despacho completado — 4 unidades</div>
+                        <div class="trace-date">25/03/2026 11:45 · DESPACHADO</div>
+                    </div>
+                    <span class="expand-icon">▾</span>
+                </div>
+                <div class="trace-details">
+                    <div class="detail-row"><span class="icon">👤</span><span class="label">Cliente:</span> Distribuidora Norte</div>
+                    <div class="detail-row"><span class="icon">📝</span> Pedido #4521 — Urgente</div>
+                </div>
+            </div>
+
+            <div class="trace-item" onclick="this.querySelector('.trace-details').classList.toggle('open')">
+                <div class="trace-row">
+                    <div class="trace-icon amber-bg">⏸</div>
+                    <div style="flex:1;">
+                        <div class="trace-title">Pre-despacho · FS-2026A-42-005</div>
+                        <div class="trace-obs">Stand-By registrado</div>
+                        <div class="trace-date">25/03/2026 09:12 · ZONA_PREDESPACHO</div>
+                    </div>
+                    <span class="expand-icon">▾</span>
+                </div>
+                <div class="trace-details">
+                    <div class="detail-row"><span class="icon">👤</span><span class="label">Cliente:</span> Calzados Express</div>
+                    <div class="detail-row"><span class="icon">📝</span> Caja golpeada pero producto intacto</div>
+                </div>
+            </div>
+
+            <div class="trace-item">
+                <div class="trace-row">
+                    <div class="trace-icon teal-bg">🏪</div>
+                    <div>
+                        <div class="trace-title">Muestra retornable · FS-2026B-40-003</div>
+                        <div class="trace-obs">Entregado a cliente: Tienda Central</div>
+                        <div class="trace-date">22/03/2026 14:20 · ZONA_CUSTODIA_COMERCIAL</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trace-item">
+                <div class="trace-row">
+                    <div class="trace-icon blue-bg">📦</div>
+                    <div>
+                        <div class="trace-title">Caja rellenada · FS-MB-2026A-42-04</div>
+                        <div class="trace-obs">Añadidos 2 par(es). Ahora: 7/8</div>
+                        <div class="trace-date">21/03/2026 16:50 · RACK</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trace-item">
+                <div class="trace-row">
+                    <div class="trace-icon green-bg">📥</div>
+                    <div>
+                        <div class="trace-title">Producción · FS-MB-2026A-42-01</div>
+                        <div class="trace-obs">Caja Master completa con 8 unidades</div>
+                        <div class="trace-date">20/03/2026 08:30 · RACK</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trace-item">
+                <div class="trace-row">
+                    <div class="trace-icon green-bg">📥</div>
+                    <div>
+                        <div class="trace-title">Producción · FS-2026A-42-025</div>
+                        <div class="trace-obs">Par individual suelto</div>
+                        <div class="trace-date">20/03/2026 08:30 · RACK</div>
+                    </div>
+                </div>
+            </div>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ SETTINGS ═══════════════ -->
+    <div class="screen" id="screen-settings">
+        <div class="top-bar">
+            <h2>Configuración</h2>
+            <div class="sub">Panel de Administración</div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="settings-section">
+                <div class="settings-section-title">Catálogo de Productos</div>
+                <div class="settings-item" onclick="showScreen('catalog')">
+                    <div class="settings-icon gold">👟</div>
+                    <div>
+                        <div class="settings-label">Gestión de Modelos</div>
+                        <div class="settings-desc">Fotos, nombres, SKUs y tallas</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-icon blue-s">📐</div>
+                    <div>
+                        <div class="settings-label">Tabla de Tallas</div>
+                        <div class="settings-desc">Rangos por modelo y conversiones</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-icon green-s">📦</div>
+                    <div>
+                        <div class="settings-label">Pares por Caja Master</div>
+                        <div class="settings-desc">Configuración de auto-boxing</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">Sistema</div>
+                <div class="settings-item" onclick="showScreen('printer-config')">
+                    <div class="settings-icon purple-s">🖨</div>
+                    <div>
+                        <div class="settings-label">Impresora QR</div>
+                        <div class="settings-desc">BarTender Enterprise · TSC TE200</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+                <div class="settings-item">
+                    <div class="settings-icon blue-s">☁</div>
+                    <div>
+                        <div class="settings-label">Sincronización</div>
+                        <div class="settings-desc">Google Sheets · Última: hace 5 min</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+                <div class="settings-item" onclick="showScreen('qr-history')">
+                    <div class="settings-icon green-s">🏷</div>
+                    <div>
+                        <div class="settings-label">Historial de QR</div>
+                        <div class="settings-desc">Reimpresión, búsqueda UUID y PDFs</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+                <div class="settings-item" onclick="showScreen('rack-map')">
+                    <div class="settings-icon gold">📍</div>
+                    <div>
+                        <div class="settings-label">Mapa de Racks</div>
+                        <div class="settings-desc">Visualizar ubicaciones del almacén</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">Cuenta</div>
+                <div class="settings-item" onclick="document.getElementById('modal-logout').classList.add('show')">
+                    <div class="settings-icon red-s">🔒</div>
+                    <div>
+                        <div class="settings-label">Cerrar Sesión</div>
+                        <div class="settings-desc">admin@punteradigital.com</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+            </div>
+
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.3;">Puntera Digital v3.0.0</div>
+                <div style="font-size:0.625rem;color:var(--on-surface-variant);opacity:0.2;margin-top:2px;">Kinetic Architect Engine</div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item active" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
+
+        <!-- Logout Confirmation Modal -->
+        <div class="modal-overlay" id="modal-logout">
+            <div class="modal-box animate-in">
+                <div class="modal-icon">🔒</div>
+                <div class="modal-title">¿Cerrar Sesión?</div>
+                <div class="modal-desc">Se cerrará la sesión de admin@punteradigital.com</div>
+                <button class="action-btn danger" style="background:rgba(255,59,48,0.15);" onclick="confirmLogout()">
+                    🚪 CERRAR SESIÓN
+                </button>
+                <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:4px;opacity:0.5;" onclick="document.getElementById('modal-logout').classList.remove('show')">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CATALOG MANAGER ═══════════════ -->
+    <div class="screen" id="screen-catalog">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Catálogo de Modelos</h2>
+                    <span class="sub">4 modelos registrados</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="catalog-grid">
+                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                    <div class="catalog-status active"></div>
+                    <div class="catalog-img"><img src="img/boot_black.png" alt="FS300CMFFPBL" /></div>
+                    <div class="catalog-name">FS300CMFFPBL</div>
+                    <div class="catalog-sku">Foot Safe 300 Comp</div>
+                </div>
+                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                    <div class="catalog-status active"></div>
+                    <div class="catalog-img"><img src="img/boot_brown.png" alt="FS302CMN" /></div>
+                    <div class="catalog-name">FS302CMN</div>
+                    <div class="catalog-sku">Foot Safe 302</div>
+                </div>
+                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                    <div class="catalog-status active"></div>
+                    <div class="catalog-img"><img src="img/boot_tactical.png" alt="FS400BK" /></div>
+                    <div class="catalog-name">FS400BK</div>
+                    <div class="catalog-sku">Foot Safe 400 Black</div>
+                </div>
+                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                    <div class="catalog-status inactive"></div>
+                    <div class="catalog-img"><img src="img/shoe_lite.png" alt="SF200LT" /></div>
+                    <div class="catalog-name">SF200LT</div>
+                    <div class="catalog-sku">Safety 200 Lite</div>
+                </div>
+            </div>
+
+            <button class="action-btn primary" style="margin-top:20px;" onclick="showScreen('catalog-edit')">➕ AGREGAR MODELO</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CATALOG EDIT ═══════════════ -->
+    <div class="screen" id="screen-catalog-edit">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('catalog')">←</button>
+                <div>
+                    <h2>Editar Modelo</h2>
+                    <span class="sub">FS300CMFFPBL</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="img-upload-zone has-image" onclick="document.getElementById('catalog-img-input').click()">
+                <img src="img/boot_black.png" alt="FS300CMFFPBL" id="catalog-edit-img" />
+                <div class="upload-overlay">
+                    <div class="img-upload-icon" style="opacity:1;color:white;">📸</div>
+                    <div class="img-upload-text" style="opacity:1;color:white;font-weight:600;">Cambiar foto</div>
+                </div>
+                <input type="file" id="catalog-img-input" accept="image/*" style="display:none;" onchange="handleImageUpload(event)" />
+            </div>
+
+            <div class="card">
+                <div class="card-title">Información del Modelo</div>
+                <div class="input-group">
+                    <label>Código SKU</label>
+                    <input class="input-field" value="FS300CMFFPBL" />
+                </div>
+                <div class="input-group">
+                    <label>Nombre Comercial</label>
+                    <input class="input-field" value="Foot Safe 300 Composite" />
+                </div>
+                <div class="input-group">
+                    <label>Origen</label>
+                    <select class="input-field">
+                        <option selected>Foot Safe</option>
+                        <option>Safety</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Talla Mín</label>
+                        <input class="input-field" value="36" type="number" />
+                    </div>
+                    <div class="input-group">
+                        <label>Talla Máx</label>
+                        <input class="input-field" value="46" type="number" />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Pares por Caja Master</label>
+                    <input class="input-field" value="8" type="number" />
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Estado</div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Modelo Activo</div>
+                        <div class="toggle-sub">Visible en entrada y despacho</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+            </div>
+
+            <button class="action-btn primary">💾 GUARDAR CAMBIOS</button>
+            <button class="action-btn danger">🗑 ELIMINAR MODELO</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PRINTER CONFIG ═══════════════ -->
+    <div class="screen" id="screen-printer-config">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Impresora QR</h2>
+                    <span class="sub" style="color: var(--purple);">BarTender Enterprise</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <!-- Connection Status Banner -->
+            <div class="printer-status-banner" id="printer-status-banner">
+                <div class="printer-status-icon" id="printer-status-icon">🔌</div>
+                <div>
+                    <div class="printer-status-text" id="printer-status-text">Sin Configurar</div>
+                    <div class="printer-status-sub" id="printer-status-sub">Ingrese IP y puerto del servidor</div>
+                </div>
+            </div>
+
+            <!-- Server Config Card -->
+            <div class="card">
+                <div class="card-title">Servidor BarTender</div>
+                <div class="input-group">
+                    <label>Dirección IP del Servidor *</label>
+                    <input class="input-field" id="printer-ip" placeholder="192.168.0.50" value="192.168.0.50" />
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Puerto *</label>
+                        <input class="input-field" id="printer-port" type="number" placeholder="8080" value="8080" />
+                    </div>
+                    <div class="input-group">
+                        <label>Protocolo</label>
+                        <select class="input-field" id="printer-protocol">
+                            <option selected>HTTP</option>
+                            <option>HTTPS</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Endpoint</label>
+                    <input class="input-field" value="/imprimir" readonly style="opacity: 0.5;" />
+                </div>
+            </div>
+
+            <!-- Test Connection -->
+            <button class="action-btn printer-test-btn" id="btn-test-printer" onclick="testPrinterConnection()">
+                <span class="printer-test-icon">📡</span> PROBAR CONEXIÓN
+            </button>
+
+            <!-- Printer Info Card (shown after successful connection) -->
+            <div class="card printer-info-card" id="printer-info-card" style="display:none;">
+                <div class="card-title">Información de Conexión</div>
+                <div class="printer-info-row">
+                    <span class="printer-info-label">URL Completa</span>
+                    <span class="printer-info-value" id="printer-full-url">—</span>
+                </div>
+                <div class="printer-info-row">
+                    <span class="printer-info-label">Impresora</span>
+                    <span class="printer-info-value">TSC TE200</span>
+                </div>
+                <div class="printer-info-row">
+                    <span class="printer-info-label">Etiqueta</span>
+                    <span class="printer-info-value">etiqueta_puntera.btw</span>
+                </div>
+                <div class="printer-info-row">
+                    <span class="printer-info-label">Última prueba</span>
+                    <span class="printer-info-value" id="printer-last-test">—</span>
+                </div>
+            </div>
+
+            <!-- Advanced Settings -->
+            <div class="card">
+                <div class="card-title">Configuración Avanzada</div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Reintentos Automáticos</div>
+                        <div class="toggle-sub">3 intentos con backoff exponencial</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Cola Offline</div>
+                        <div class="toggle-sub">Encolar jobs si no hay conexión</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="input-group" style="margin-top:8px;">
+                    <label>Timeout de Conexión (segundos)</label>
+                    <input class="input-field" type="number" value="10" />
+                </div>
+            </div>
+
+            <button class="action-btn primary glow-primary" onclick="savePrinterConfig()">💾 GUARDAR CONFIGURACIÓN</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ QR HISTORY ═══════════════ -->
+    <div class="screen" id="screen-qr-history">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Historial de QR</h2>
+                    <span class="sub" style="color: var(--tertiary);">Reimpresión y PDFs</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <!-- UUID Search -->
+            <div class="card">
+                <div class="card-title">🔍 Buscar QR por UUID</div>
+                <div style="display:flex;gap:8px;">
+                    <input class="input-field" id="qr-search-uuid" placeholder="Ej: FS-2026A-42-001" style="flex:1;" />
+                    <button style="width:48px;height:48px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--primary),var(--primary-container));border:none;color:var(--on-primary);font-size:18px;cursor:pointer;font-weight:700;transition:all 0.2s;" onclick="searchQRByUUID()" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">→</button>
+                </div>
+                <div id="qr-search-result" style="display:none;margin-top:12px;">
+                    <div class="qr-result-card">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div class="qr-preview-box">QR</div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;font-size:0.875rem;" id="qr-result-uuid">FS-2026A-42-001</div>
+                                <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;" id="qr-result-info">FS300CMFFPBL · Talla 42</div>
+                                <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.4;margin-top:2px;" id="qr-result-date">Creado: 15/04/2026 10:30</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:12px;">
+                            <button class="hub-btn filled amber" style="flex:1;font-size:0.75rem;" onclick="reprintQR('individual')">🖨 Reimprimir</button>
+                            <button class="hub-btn outline" style="flex:1;font-size:0.75rem;" onclick="generateIndividualPDF()">📄 Generar PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Production Groups -->
+            <div class="section-title" style="margin-top:16px;">📅 Producción por Día</div>
+
+            <div class="qr-day-group">
+                <div class="qr-day-header" onclick="toggleDayGroup(this)">
+                    <div>
+                        <div class="qr-day-date">15 Abril 2026</div>
+                        <div class="qr-day-count">32 etiquetas · 4 cajas master</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <button class="qr-pdf-btn" onclick="event.stopPropagation();generateDayPDF('15-Abr-2026')">📄 PDF</button>
+                        <span class="expand-icon">▾</span>
+                    </div>
+                </div>
+                <div class="qr-day-items">
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026A-42-001</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS300CMFFPBL · T42 · R-A01</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026A-42-001')">🖨</button></div>
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026A-42-002</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS300CMFFPBL · T42 · R-A01</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026A-42-002')">🖨</button></div>
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026A-43-001</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS300CMFFPBL · T43 · R-A02</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026A-43-001')">🖨</button></div>
+                    <div class="qr-item"><div class="qr-preview-box-sm">📦</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-MB-2026A-42-01</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">Caja Master · 8 pares</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-MB-2026A-42-01')">🖨</button></div>
+                </div>
+            </div>
+
+            <div class="qr-day-group">
+                <div class="qr-day-header" onclick="toggleDayGroup(this)">
+                    <div>
+                        <div class="qr-day-date">14 Abril 2026</div>
+                        <div class="qr-day-count">24 etiquetas · 3 cajas master</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <button class="qr-pdf-btn" onclick="event.stopPropagation();generateDayPDF('14-Abr-2026')">📄 PDF</button>
+                        <span class="expand-icon">▾</span>
+                    </div>
+                </div>
+                <div class="qr-day-items">
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026B-40-001</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS302CMN · T40 · R-B02</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026B-40-001')">🖨</button></div>
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026B-40-002</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS302CMN · T40 · R-B02</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026B-40-002')">🖨</button></div>
+                    <div class="qr-item"><div class="qr-preview-box-sm">📦</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-MB-2026B-40-01</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">Caja Master · 8 pares</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-MB-2026B-40-01')">🖨</button></div>
+                </div>
+            </div>
+
+            <div class="qr-day-group">
+                <div class="qr-day-header" onclick="toggleDayGroup(this)">
+                    <div>
+                        <div class="qr-day-date">13 Abril 2026</div>
+                        <div class="qr-day-count">16 etiquetas · 2 cajas master</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <button class="qr-pdf-btn" onclick="event.stopPropagation();generateDayPDF('13-Abr-2026')">📄 PDF</button>
+                        <span class="expand-icon">▾</span>
+                    </div>
+                </div>
+                <div class="qr-day-items">
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026A-44-001</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS400BK · T44 · R-C01</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026A-44-001')">🖨</button></div>
+                    <div class="qr-item"><div class="qr-preview-box-sm">QR</div><div style="flex:1;"><div style="font-size:0.8125rem;font-weight:600;">FS-2026A-44-002</div><div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">FS400BK · T44 · R-C01</div></div><button class="qr-reprint-btn" onclick="reprintQR('FS-2026A-44-002')">🖨</button></div>
+                </div>
+            </div>
+
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ RACK MAP ═══════════════ -->
+    <div class="screen" id="screen-rack-map">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Mapa de Racks</h2>
+                    <span class="sub" style="color: var(--amber);">Almacén Principal</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="rack-legend">
+                <span class="rack-legend-item"><span class="rack-dot high"></span> Alto</span>
+                <span class="rack-legend-item"><span class="rack-dot mid"></span> Medio</span>
+                <span class="rack-legend-item"><span class="rack-dot low"></span> Bajo</span>
+                <span class="rack-legend-item"><span class="rack-dot empty"></span> Vacío</span>
+            </div>
+
+            <div class="rack-section-title">Pasillo A</div>
+            <div class="rack-grid">
+                <div class="rack-cell high"><div class="rack-id">R-A01</div><div class="rack-count">24/30</div><div class="rack-model">FS300CMFFPBL</div><div class="rack-bar"><div class="rack-fill" style="width:80%"></div></div></div>
+                <div class="rack-cell mid"><div class="rack-id">R-A02</div><div class="rack-count">15/30</div><div class="rack-model">FS300CMFFPBL</div><div class="rack-bar"><div class="rack-fill" style="width:50%"></div></div></div>
+                <div class="rack-cell low"><div class="rack-id">R-A03</div><div class="rack-count">6/30</div><div class="rack-model">FS302CMN</div><div class="rack-bar"><div class="rack-fill" style="width:20%"></div></div></div>
+            </div>
+
+            <div class="rack-section-title">Pasillo B</div>
+            <div class="rack-grid">
+                <div class="rack-cell high"><div class="rack-id">R-B01</div><div class="rack-count">28/30</div><div class="rack-model">FS302CMN</div><div class="rack-bar"><div class="rack-fill" style="width:93%"></div></div></div>
+                <div class="rack-cell mid"><div class="rack-id">R-B02</div><div class="rack-count">12/30</div><div class="rack-model">FS302CMN</div><div class="rack-bar"><div class="rack-fill" style="width:40%"></div></div></div>
+                <div class="rack-cell empty"><div class="rack-id">R-B03</div><div class="rack-count">0/30</div><div class="rack-model">—</div><div class="rack-bar"><div class="rack-fill" style="width:0%"></div></div></div>
+            </div>
+
+            <div class="rack-section-title">Pasillo C</div>
+            <div class="rack-grid">
+                <div class="rack-cell mid"><div class="rack-id">R-C01</div><div class="rack-count">18/30</div><div class="rack-model">FS400BK</div><div class="rack-bar"><div class="rack-fill" style="width:60%"></div></div></div>
+                <div class="rack-cell low"><div class="rack-id">R-C02</div><div class="rack-count">4/30</div><div class="rack-model">SF200LT</div><div class="rack-bar"><div class="rack-fill" style="width:13%"></div></div></div>
+            </div>
+
+            <div class="rack-summary">
+                <div class="rack-summary-item"><div class="rack-summary-value">107</div><div class="rack-summary-label">Pares Total</div></div>
+                <div class="rack-summary-item"><div class="rack-summary-value">8</div><div class="rack-summary-label">Racks</div></div>
+                <div class="rack-summary-item"><div class="rack-summary-value">45%</div><div class="rack-summary-label">Ocupación</div></div>
+            </div>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
+    <div class="screen" id="screen-login">
+        <div class="screen-body animate-in" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:730px;padding:40px 30px;">
+            <div class="login-logo">⚡</div>
+            <div class="login-title">Puntera Digital</div>
+            <div class="login-subtitle">Kinetic Architect — Industry 5.0</div>
+            <div style="width:100%;margin-top:32px;">
+                <div class="input-group">
+                    <label>Correo Electrónico</label>
+                    <input class="input-field" id="login-email" type="email" value="admin@punteradigital.com" />
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input class="input-field" id="login-password" type="password" value="admin123" />
+                </div>
+                <button class="action-btn primary glow-primary" id="btn-login" onclick="handleLogin()" style="margin-top:8px;">🔓 INICIAR SESIÓN</button>
+            </div>
+            <div style="margin-top:auto;padding-top:40px;text-align:center;">
+                <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.3;">Puntera Digital v3.0.0</div>
+                <div style="font-size:0.625rem;color:var(--on-surface-variant);opacity:0.2;margin-top:2px;">Kinetic Architect Engine</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══ SCREEN NAVIGATION ═══
+const tabMap = { home:0, entry:1, movements:2, dispatch:3, muestras:4, refill:5, trace:6, settings:7 };
+const bottomMap = { home:0, entry:1, movements:2, trace:3, settings:4 };
+
+function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const screen = document.getElementById('screen-' + name);
+    if (screen) screen.classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', i === tabMap[name]);
+    });
+    document.querySelectorAll('.nav-item').forEach((n, i) => {
+        n.classList.toggle('active', i === bottomMap[name]);
+    });
+}
+
+// ═══ ORIGIN CHIP TOGGLE ═══
+document.querySelectorAll('.origin-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const row = chip.parentElement;
+        row.querySelectorAll('.origin-chip').forEach(c => {
+            c.classList.remove('fs', 'sf');
+            c.classList.add(c === chip ? (c.textContent.includes('Safe') ? 'fs' : 'sf-active') : 'sf');
+        });
+        if (chip.textContent.includes('Safety')) {
+            chip.style.background = 'var(--secondary-container)';
+            chip.style.color = 'white';
+            chip.textContent = '✓ Safety';
+            const other = row.children[0];
+            if (other !== chip) {
+                other.style.background = 'var(--surface-container-lowest)';
+                other.style.color = 'var(--on-surface-variant)';
+                other.textContent = 'Foot Safe';
+                other.className = 'origin-chip sf';
+            }
+            chip.className = 'origin-chip';
+            document.querySelectorAll('.home-mode').forEach(m => m.textContent = 'Modo: Safety');
+        } else {
+            chip.style.background = '';
+            chip.style.color = '';
+            chip.textContent = '✓ Foot Safe';
+            chip.className = 'origin-chip fs';
+            const other = row.children[1];
+            if (other !== chip) {
+                other.style.background = 'var(--surface-container-lowest)';
+                other.style.color = 'var(--on-surface-variant)';
+                other.textContent = 'Safety';
+                other.className = 'origin-chip sf';
+            }
+            document.querySelectorAll('.home-mode').forEach(m => m.textContent = 'Modo: Foot Safe');
+        }
+    });
+});
+
+// ═══ TOGGLE SWITCH ═══
+document.querySelectorAll('.toggle-switch').forEach(sw => {
+    sw.addEventListener('click', () => {
+        sw.classList.toggle('on');
+        const previewBox = sw.closest('.card')?.querySelector('.preview-box');
+        if (previewBox) previewBox.style.display = sw.classList.contains('on') ? 'block' : 'none';
+    });
+});
+
+// ═══ REMAINDER CHIPS ═══
+document.querySelectorAll('.rem-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const parent = chip.parentElement;
+        const desc = parent.parentElement.querySelector('.rem-desc');
+        parent.querySelectorAll('.rem-chip').forEach(c => { c.className = 'rem-chip inactive'; });
+        if (chip.textContent.includes('sueltos')) {
+            chip.className = 'rem-chip active-loose';
+            if (desc) desc.textContent = 'Se generarán etiquetas individuales sin caja padre.';
+        } else {
+            chip.className = 'rem-chip active-fill';
+            if (desc) desc.textContent = 'Se creará una caja marcada como "Pendiente por Rellenar" (1/8).';
+        }
+    });
+});
+
+// ═══ DISPATCH CHECKBOXES ═══
+document.querySelectorAll('.dispatch-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const cb = item.querySelector('.checkbox');
+        cb.classList.toggle('checked');
+        cb.textContent = cb.classList.contains('checked') ? '✓' : '';
+        item.classList.toggle('selected', cb.classList.contains('checked'));
+        updateDispatchCount();
+    });
+});
+
+function updateDispatchCount() {
+    const total = document.querySelectorAll('#screen-dispatch .dispatch-item').length;
+    const sel = document.querySelectorAll('#screen-dispatch .checkbox.checked').length;
+    const counter = document.querySelector('.dispatch-count');
+    if (counter) counter.textContent = sel + ' de ' + total + ' seleccionados';
+    const btn = document.querySelector('#screen-dispatch .action-btn.green');
+    if (btn) btn.innerHTML = '🚚 CONFIRMAR SALIDA (' + sel + ')';
+}
+
+document.querySelectorAll('.dispatch-actions button').forEach((btn, i) => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('#screen-dispatch .dispatch-item').forEach(item => {
+            const cb = item.querySelector('.checkbox');
+            if (i === 0) { cb.classList.add('checked'); cb.textContent = '✓'; item.classList.add('selected'); }
+            else { cb.classList.remove('checked'); cb.textContent = ''; item.classList.remove('selected'); }
+        });
+        updateDispatchCount();
+    });
+});
+
+// ═══ TRACE EXPAND ═══
+document.querySelectorAll('#screen-trace .trace-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const details = item.querySelector('.trace-details');
+        const icon = item.querySelector('.expand-icon');
+        if (details) {
+            details.classList.toggle('open');
+            if (icon) icon.textContent = details.classList.contains('open') ? '▴' : '▾';
+        }
+    });
+});
+
+// ═══ MUESTRA ACTIONS ═══
+document.querySelectorAll('.muestra-btn.outline-green').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.muestra-card');
+        card.style.transition = 'all 0.4s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(-100%)';
+        setTimeout(() => {
+            card.innerHTML = '<div style="padding:14px;text-align:center;color:var(--dispatch);font-weight:700;font-size:0.875rem;">✅ Retornado al Stock</div>';
+            card.style.opacity = '1';
+            card.style.transform = 'translateX(0)';
+        }, 400);
+    });
+});
+document.querySelectorAll('.muestra-btn.filled-orange').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.muestra-card');
+        const badge = card.querySelector('.muestra-badge');
+        if (badge) { badge.textContent = 'VENDIDA'; badge.style.background = 'rgba(255,149,0,0.12)'; badge.style.color = 'var(--warning)'; }
+        card.querySelector('.muestra-actions').innerHTML = '<div style="text-align:center;color:var(--warning);font-size:0.75rem;font-weight:600;padding:6px 0;">🛒 Cliente se quedó con el par</div>';
+    });
+});
+
+// ═══ REFILL ═══
+let refillChildCount = 2;
+document.querySelectorAll('.child-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+        btn.closest('.child-item').remove();
+        refillChildCount--;
+        const total = 5 + refillChildCount;
+        document.querySelector('.progress-fill.blue').style.width = ((total / 8) * 100) + '%';
+        const confirmBtn = document.querySelector('#screen-refill .action-btn.blue');
+        if (confirmBtn) confirmBtn.textContent = '✅ CONFIRMAR RELLENADO (' + refillChildCount + ' pares)';
+    });
+});
+
+// ═══ ACTION BUTTON FEEDBACK ═══
+document.querySelectorAll('.action-btn.primary').forEach(btn => {
+    if (btn.id === 'btn-entry-register' || btn.id === 'btn-login') return; // These have their own flows
+    btn.addEventListener('click', () => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✅ ¡GUARDADO CON ÉXITO!';
+        btn.style.background = 'var(--dispatch)';
+        btn.style.boxShadow = '0 4px 24px rgba(52,199,89,0.3)';
+        btn.classList.remove('glow-primary');
+        setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.boxShadow = ''; btn.classList.add('glow-primary'); }, 2000);
+    });
+});
+
+// ═══ CLOSE MODALS ON ESC ═══
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        dismissSnackbar();
+        document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+    }
+});
+
+// ═══ PRINTER CONFIG ═══
+function testPrinterConnection() {
+    const btn = document.getElementById('btn-test-printer');
+    const banner = document.getElementById('printer-status-banner');
+    const icon = document.getElementById('printer-status-icon');
+    const text = document.getElementById('printer-status-text');
+    const sub = document.getElementById('printer-status-sub');
+    const ip = document.getElementById('printer-ip').value;
+    const port = document.getElementById('printer-port').value;
+    const protocol = document.getElementById('printer-protocol').value.toLowerCase();
+
+    // Phase 1: Testing...
+    btn.innerHTML = '<span class="printer-spinner"></span> PROBANDO...';
+    btn.disabled = true;
+    btn.classList.add('testing');
+    banner.className = 'printer-status-banner testing';
+    icon.textContent = '⏳';
+    text.textContent = 'Probando Conexión...';
+    sub.textContent = `Conectando a ${protocol}://${ip}:${port}/imprimir`;
+
+    // Phase 2: Success (simulated after 1.5s)
+    setTimeout(() => {
+        banner.className = 'printer-status-banner connected';
+        icon.textContent = '✅';
+        text.textContent = 'Conectado';
+        sub.textContent = `BarTender respondió correctamente`;
+        btn.innerHTML = '✅ CONEXIÓN EXITOSA';
+        btn.classList.remove('testing');
+        btn.classList.add('success');
+
+        // Show info card
+        const infoCard = document.getElementById('printer-info-card');
+        infoCard.style.display = 'block';
+        infoCard.classList.add('animate-in');
+        document.getElementById('printer-full-url').textContent = `${protocol}://${ip}:${port}/imprimir`;
+        const now = new Date();
+        document.getElementById('printer-last-test').textContent = now.toLocaleString('es-VE');
+
+        setTimeout(() => {
+            btn.innerHTML = '<span class="printer-test-icon">📡</span> PROBAR CONEXIÓN';
+            btn.disabled = false;
+            btn.classList.remove('success');
+        }, 3000);
+    }, 1500);
+}
+
+function savePrinterConfig() {
+    const ip = document.getElementById('printer-ip').value;
+    const port = document.getElementById('printer-port').value;
+    if (!ip || !port) {
+        showSnackbar('⚠️ Complete IP y Puerto antes de guardar', 'warning');
+        return;
+    }
+    showSnackbar('✅ Configuración de impresora guardada', 'success');
+
+    // Update settings screen description
+    const settingsDesc = document.querySelector('.settings-item[onclick*="printer-config"] .settings-desc');
+    if (settingsDesc) settingsDesc.textContent = `${ip}:${port} · TSC TE200`;
+}
+
+// ═══ SNACKBAR SYSTEM ═══
+function showSnackbar(message, type = 'info') {
+    let snackbar = document.getElementById('snackbar');
+    if (!snackbar) {
+        snackbar = document.createElement('div');
+        snackbar.id = 'snackbar';
+        document.body.appendChild(snackbar);
+    }
+    snackbar.textContent = message;
+    snackbar.className = `snackbar show ${type}`;
+    clearTimeout(snackbar._timeout);
+    snackbar._timeout = setTimeout(() => dismissSnackbar(), 3000);
+}
+
+function dismissSnackbar() {
+    const snackbar = document.getElementById('snackbar');
+    if (snackbar) snackbar.classList.remove('show');
+}
+
+// ═══ ENTRY REGISTRATION FLOW ═══
+function handleEntryRegister() {
+    const rack = document.getElementById('entry-rack');
+    const summary = document.getElementById('entry-confirm-summary');
+    summary.innerHTML = `
+        <div class="confirm-row"><span class="confirm-label">Modelo:</span> FS300CMFFPBL</div>
+        <div class="confirm-row"><span class="confirm-label">Talla:</span> 42</div>
+        <div class="confirm-row"><span class="confirm-label">Lote:</span> 2026A</div>
+        <div class="confirm-row"><span class="confirm-label">Cantidad:</span> 25 pares</div>
+        <div class="confirm-row"><span class="confirm-label">Ubicación:</span> ${rack.value}</div>
+        <div class="confirm-row"><span class="confirm-label">Cajas Master:</span> 3 completas + 1 par suelto</div>
+    `;
+    document.getElementById('modal-entry-confirm').classList.add('show');
+}
+
+function confirmEntryRegister() {
+    document.getElementById('modal-entry-confirm').classList.remove('show');
+    const rack = document.getElementById('entry-rack');
+    const banner = document.getElementById('entry-success-banner');
+    const detail = document.getElementById('success-detail');
+    detail.innerHTML = `
+        <div>📦 3 Cajas Master + 1 par suelto registrados</div>
+        <div>📍 Ubicación: ${rack.value}</div>
+        <div>🖨 Etiquetas enviadas a impresora</div>
+        <div style="margin-top:8px;font-size:0.6875rem;opacity:0.5;">ID: FS-MB-2026A-42-04...06 + FS-2026A-42-025</div>
+    `;
+    banner.style.display = 'block';
+    banner.classList.add('animate-in');
+    document.getElementById('btn-entry-register').style.display = 'none';
+    showSnackbar('✅ Registro exitoso — Imprimiendo etiquetas', 'success');
+}
+
+function dismissEntrySuccess() {
+    document.getElementById('entry-success-banner').style.display = 'none';
+    document.getElementById('btn-entry-register').style.display = '';
+}
+
+// ═══ MUESTRAS SCANNER ═══
+function openMuestraScanner() {
+    document.getElementById('muestra-scan-uuid').value = '';
+    document.getElementById('muestra-scan-result').style.display = 'none';
+    if (document.getElementById('muestra-client')) document.getElementById('muestra-client').value = '';
+    if (document.getElementById('muestra-obs')) document.getElementById('muestra-obs').value = '';
+    document.getElementById('modal-muestra-scanner').classList.add('show');
+}
+
+function searchMuestraUUID() {
+    const uuid = document.getElementById('muestra-scan-uuid').value.trim();
+    if (!uuid) { showSnackbar('⚠️ Ingrese un UUID para buscar', 'warning'); return; }
+    const result = document.getElementById('muestra-scan-result');
+    document.getElementById('muestra-result-title').textContent = uuid;
+    document.getElementById('muestra-result-detail').textContent = 'FS300CMFFPBL · Talla 42 · Lote 2026A';
+    result.style.display = 'block';
+    result.classList.add('animate-in');
+}
+
+function confirmNewMuestra() {
+    const client = document.getElementById('muestra-client').value.trim();
+    if (!client) { showSnackbar('⚠️ El campo Cliente es obligatorio', 'warning'); return; }
+    const uuid = document.getElementById('muestra-scan-uuid').value.trim();
+    document.getElementById('modal-muestra-scanner').classList.remove('show');
+    showSnackbar('✅ Muestra registrada exitosamente', 'success');
+    const container = document.querySelector('#screen-muestras .screen-body');
+    const fab = container.querySelector('.fab');
+    const card = document.createElement('div');
+    card.className = 'muestra-card animate-in';
+    const now = new Date();
+    card.innerHTML = `
+        <div class="muestra-header"><div>
+            <div style="font-size:0.875rem;font-weight:700;">${uuid}</div>
+            <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS300CMFFPBL · Talla 42</div>
+            <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:2px;opacity:0.4;">Desde: ${now.toLocaleDateString('es-VE')} ${now.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div><span class="muestra-badge">MUESTRA</span></div>
+        <div class="muestra-actions">
+            <button class="muestra-btn outline-green">↩ Retornar</button>
+            <button class="muestra-btn filled-orange">🛒 Se quedó</button>
+        </div>
+    `;
+    container.insertBefore(card, fab);
+    // Attach event listeners to new buttons
+    card.querySelector('.muestra-btn.outline-green').addEventListener('click', (e) => {
+        e.stopPropagation();
+        card.style.transition = 'all 0.4s'; card.style.opacity = '0'; card.style.transform = 'translateX(-100%)';
+        setTimeout(() => { card.innerHTML = '<div style="padding:14px;text-align:center;color:var(--dispatch);font-weight:700;font-size:0.875rem;">✅ Retornado al Stock</div>'; card.style.opacity = '1'; card.style.transform = 'translateX(0)'; }, 400);
+    });
+    card.querySelector('.muestra-btn.filled-orange').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const badge = card.querySelector('.muestra-badge');
+        if (badge) { badge.textContent = 'VENDIDA'; badge.style.background = 'rgba(255,149,0,0.12)'; badge.style.color = 'var(--warning)'; }
+        card.querySelector('.muestra-actions').innerHTML = '<div style="text-align:center;color:var(--warning);font-size:0.75rem;font-weight:600;padding:6px 0;">🛒 Cliente se quedó con el par</div>';
+    });
+}
+
+// ═══ LOGOUT ═══
+function confirmLogout() {
+    document.getElementById('modal-logout').classList.remove('show');
+    showScreen('login');
+    showSnackbar('🔒 Sesión cerrada', 'info');
+}
+
+function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    if (!email || !pass) { showSnackbar('⚠️ Complete todos los campos', 'warning'); return; }
+    showScreen('home');
+    showSnackbar('👋 ¡Bienvenido de vuelta!', 'success');
+}
+
+// ═══ IMAGE UPLOAD ═══
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('catalog-edit-img').src = e.target.result;
+        showSnackbar('✅ Imagen actualizada correctamente', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+// ═══ QR HISTORY ═══
+function searchQRByUUID() {
+    const uuid = document.getElementById('qr-search-uuid').value.trim();
+    if (!uuid) { showSnackbar('⚠️ Ingrese un UUID para buscar', 'warning'); return; }
+    const result = document.getElementById('qr-search-result');
+    document.getElementById('qr-result-uuid').textContent = uuid;
+    document.getElementById('qr-result-info').textContent = uuid.includes('MB') ? '📦 Caja Master · 8 pares' : 'FS300CMFFPBL · Talla 42';
+    document.getElementById('qr-result-date').textContent = 'Creado: ' + new Date().toLocaleDateString('es-VE') + ' ' + new Date().toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'});
+    result.style.display = 'block';
+    result.classList.add('animate-in');
+    showSnackbar('🔍 QR encontrado: ' + uuid, 'info');
+}
+
+function reprintQR(uuid) {
+    showSnackbar('🖨 Enviando a impresora: ' + uuid, 'info');
+    setTimeout(() => showSnackbar('✅ QR reimpreso exitosamente', 'success'), 1500);
+}
+
+function generateIndividualPDF() {
+    const uuid = document.getElementById('qr-result-uuid').textContent;
+    showSnackbar('📄 Generando PDF para ' + uuid + '...', 'info');
+    setTimeout(() => showSnackbar('✅ PDF guardado en /QR_PDFs/' + uuid + '.pdf', 'success'), 1200);
+}
+
+function generateDayPDF(date) {
+    showSnackbar('📄 Generando PDF del día ' + date + '...', 'info');
+    setTimeout(() => showSnackbar('✅ PDF guardado en /QR_PDFs/' + date + '.pdf', 'success'), 1500);
+}
+
+function toggleDayGroup(header) {
+    const group = header.parentElement;
+    const icon = header.querySelector('.expand-icon');
+    group.classList.toggle('open');
+    if (icon) icon.textContent = group.classList.contains('open') ? '▴' : '▾';
+}
+</script>
+
+</body>
+</html>

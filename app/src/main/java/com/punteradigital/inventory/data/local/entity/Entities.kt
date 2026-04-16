@@ -1,0 +1,84 @@
+package com.punteradigital.inventory.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Represents a single unit (a pair of boots) with complete traceability.
+ * UUID format: {FS|SF}-{LOTE}-{TALLA}-{SEQ}  e.g. FS-2026A-42-001
+ */
+@Entity(tableName = "products")
+data class ProductEntity(
+    @PrimaryKey val uuid: String,         // FS-xxxx or SF-xxxx
+    val parentUuid: String? = null,       // If child of a Master Box
+    val origin: String,                   // "FOOT_SAFE" or "SAFETY"
+    val model: String,                    // e.g. "FS300CMFFPBL"
+    val size: String,                     // e.g. "42"
+    val lot: String,                      // e.g. "LOTE-2026-03"
+    val entryType: String,                // "PRODUCCION", "AJUSTE", "TRASLADO"
+    val status: String = "AVAILABLE",     // AVAILABLE, STB, DISPATCHED, BAJA_*
+    val location: String = "RACK",        // RACK, ZONA_PREDESPACHO, DESPACHADO
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * Represents a Master Box (Caja Master) containing N child units.
+ * UUID format: {FS|SF}-MB-{LOTE}-{TALLA}-{SEQ}
+ */
+@Entity(tableName = "master_boxes")
+data class MasterBoxEntity(
+    @PrimaryKey val uuid: String,         // Parent UUID with MB marker
+    val origin: String,                   // "FOOT_SAFE" or "SAFETY"
+    val model: String,
+    val size: String,
+    val lot: String,
+    val childCount: Int,                  // Total children (default 8)
+    val activeChildCount: Int,            // Children still in box
+    val isComplete: Boolean = true,       // False when a child is removed
+    val status: String = "COMPLETE",      // COMPLETE, PENDIENTE_POR_RELLENAR
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * Movement tracking for full traceability.
+ */
+@Entity(tableName = "movements")
+data class MovementEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val uuid: String,                     // UUID of the product or master box
+    val type: String,                     // "IN", "STB", "OUT", "BAJA", "MUESTRA"
+    val reason: String,                   // Entry type or baja reason
+    val observation: String = "",
+    val cliente: String = "",             // Client name for traceability
+    val observacionesExtra: String = "",  // Additional observations
+    val location: String = "",            // Target location
+    val timestamp: Long = System.currentTimeMillis(),
+    val userId: String
+)
+
+/**
+ * Sync queue for offline-first resilience.
+ * Stores pending operations to sync with cloud/BarTender when connection restores.
+ */
+@Entity(tableName = "sync_queue")
+data class SyncQueueItem(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val payload: String,                  // JSON serialized data
+    val endpoint: String,                 // "BARTENDER" or "SHEETS"
+    val status: String = "PENDING",       // PENDING, SYNCED, FAILED
+    val retryCount: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
+    val syncedAt: Long? = null
+)
+
+/**
+ * User entity for PIN-based authentication.
+ */
+@Entity(tableName = "users")
+data class UserEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val pin: String,                      // Stored as SHA-256 hash in production
+    val role: String                      // "ADMIN", "OPERADOR"
+)
