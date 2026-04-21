@@ -1,13 +1,25 @@
 package com.punteradigital.inventory.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
  * Represents a single unit (a pair of boots) with complete traceability.
  * UUID format: {FS|SF}-{LOTE}-{TALLA}-{SEQ}  e.g. FS-2026A-42-001
  */
-@Entity(tableName = "products")
+@Entity(
+    tableName = "products",
+    indices = [
+        // status is the most queried column: AVAILABLE, STB, DISPATCHED, BAJA_*, MUESTRA
+        // Avoids full table scans on every counter refresh and list query
+        Index(value = ["status"]),
+        // parentUuid used for master box child lookups
+        Index(value = ["parentUuid"]),
+        // Composite for origin-filtered status queries
+        Index(value = ["origin", "status"])
+    ]
+)
 data class ProductEntity(
     @PrimaryKey val uuid: String,         // FS-xxxx or SF-xxxx
     val parentUuid: String? = null,       // If child of a Master Box
@@ -26,7 +38,15 @@ data class ProductEntity(
  * Represents a Master Box (Caja Master) containing N child units.
  * UUID format: {FS|SF}-MB-{LOTE}-{TALLA}-{SEQ}
  */
-@Entity(tableName = "master_boxes")
+@Entity(
+    tableName = "master_boxes",
+    indices = [
+        // isComplete + status frequently queried together for incomplete box lookups
+        Index(value = ["isComplete", "status"]),
+        // model+size+origin for Smart Entry compatibility checks
+        Index(value = ["model", "size", "origin"])
+    ]
+)
 data class MasterBoxEntity(
     @PrimaryKey val uuid: String,         // Parent UUID with MB marker
     val origin: String,                   // "FOOT_SAFE" or "SAFETY"
@@ -43,7 +63,15 @@ data class MasterBoxEntity(
 /**
  * Movement tracking for full traceability.
  */
-@Entity(tableName = "movements")
+@Entity(
+    tableName = "movements",
+    indices = [
+        // type+timestamp: used by analytics (getTopClients, getEntryMovements)
+        Index(value = ["type", "timestamp"]),
+        // uuid: used for per-product movement history lookups
+        Index(value = ["uuid"])
+    ]
+)
 data class MovementEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val uuid: String,                     // UUID of the product or master box

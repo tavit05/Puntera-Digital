@@ -13,29 +13,44 @@ import javax.inject.Singleton
  * Manages audio feedback for scan operations.
  * - Beep sound on successful scan (burst mode)
  * - Error tone on validation failure
+ * ToneGenerator is created lazily and released when not in use to avoid
+ * holding audio hardware resources permanently.
  */
 @Singleton
 class SoundManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+    // Lazily allocated — only holds audio hardware during active scanner sessions
+    private var _toneGenerator: ToneGenerator? = null
+    private val toneGenerator: ToneGenerator
+        get() {
+            if (_toneGenerator == null) {
+                _toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+            }
+            return _toneGenerator!!
+        }
 
     /** Short beep for successful rapid scan */
     fun playSuccessBeep() {
-        toneGenerator.startTone(ToneGenerator.TONE_PROP_ACK, 100)
+        try { toneGenerator.startTone(ToneGenerator.TONE_PROP_ACK, 100) }
+        catch (e: Exception) { /* Audio may be unavailable on some devices */ }
     }
 
     /** Error beep for validation failure */
     fun playErrorBeep() {
-        toneGenerator.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+        try { toneGenerator.startTone(ToneGenerator.TONE_PROP_NACK, 300) }
+        catch (e: Exception) { /* Audio may be unavailable on some devices */ }
     }
 
     /** Critical alert sound for Poka-Yoke violations */
     fun playCriticalAlert() {
-        toneGenerator.startTone(ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK, 500)
+        try { toneGenerator.startTone(ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK, 500) }
+        catch (e: Exception) { /* Audio may be unavailable on some devices */ }
     }
 
+    /** Release audio hardware — call when scanner session ends */
     fun release() {
-        toneGenerator.release()
+        _toneGenerator?.release()
+        _toneGenerator = null
     }
 }

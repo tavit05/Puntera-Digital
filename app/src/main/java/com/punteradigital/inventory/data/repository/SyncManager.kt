@@ -32,6 +32,10 @@ class SyncManager @Inject constructor(
     private val gson = Gson()
     private val TAG = "SyncManager"
 
+    // Cached print service — rebuilt only when IP changes
+    private var cachedBaseUrl: String? = null
+    private var cachedPrintService: PrintService? = null
+
     companion object {
         const val ENDPOINT_BARTENDER = "BARTENDER"
         const val ENDPOINT_SHEETS = "SHEETS"
@@ -90,18 +94,26 @@ class SyncManager @Inject constructor(
 
     /**
      * Builds a dynamic PrintService using current printer preferences.
+     * Cached per base URL to allow TCP connection reuse.
      */
     private fun buildPrintService(): PrintService {
+        val currentBaseUrl = printerPreferences.getBaseUrl()
+        val existing = cachedPrintService
+        if (existing != null && cachedBaseUrl == currentBaseUrl) return existing
+
         val client = OkHttpClient.Builder()
             .connectTimeout(printerPreferences.timeoutSeconds.toLong(), TimeUnit.SECONDS)
             .readTimeout(printerPreferences.timeoutSeconds.toLong(), TimeUnit.SECONDS)
             .writeTimeout(printerPreferences.timeoutSeconds.toLong(), TimeUnit.SECONDS)
             .build()
         val retrofit = Retrofit.Builder()
-            .baseUrl(printerPreferences.getBaseUrl())
+            .baseUrl(currentBaseUrl)
             .client(client)
             .build()
-        return retrofit.create(PrintService::class.java)
+        val service = retrofit.create(PrintService::class.java)
+        cachedPrintService = service
+        cachedBaseUrl = currentBaseUrl
+        return service
     }
 
     /**

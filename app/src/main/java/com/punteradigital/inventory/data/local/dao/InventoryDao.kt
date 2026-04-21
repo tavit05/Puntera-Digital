@@ -140,6 +140,21 @@ interface InventoryDao {
     @Query("SELECT * FROM users WHERE pin = :pin LIMIT 1")
     suspend fun getUserByPin(pin: String): UserEntity?
 
+    @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+    suspend fun getUserById(id: String): UserEntity?
+
+    @Query("SELECT * FROM users ORDER BY name ASC")
+    fun getAllUsers(): Flow<List<UserEntity>>
+
+    @Query("DELETE FROM users WHERE id = :id")
+    suspend fun deleteUser(id: String)
+
+    @Query("SELECT COUNT(*) FROM users WHERE role = 'ADMIN'")
+    suspend fun getAdminCount(): Int
+
+    @Query("SELECT COUNT(*) FROM users")
+    suspend fun getUserCount(): Int
+
     // ═══════════════════════════════════════════════════════════════
     // ANALYTICS (Traceability Intelligence)
     // ═══════════════════════════════════════════════════════════════

@@ -13,7 +13,9 @@ import com.punteradigital.inventory.data.local.entity.*
         SyncQueueItem::class,
         UserEntity::class
     ],
-    version = 4,
+    version = 5,   // v5: Added indices on products(status, parentUuid, origin+status),
+                   //     master_boxes(isComplete+status, model+size+origin),
+                   //     movements(type+timestamp, uuid)
     exportSchema = false
 )
 abstract class InventoryDatabase : RoomDatabase() {

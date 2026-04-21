@@ -45,6 +45,7 @@ import com.punteradigital.inventory.presentation.settings.CatalogScreen
 import com.punteradigital.inventory.presentation.settings.CatalogEditScreen
 import com.punteradigital.inventory.presentation.settings.QRHistoryScreen
 import com.punteradigital.inventory.presentation.settings.RackMapScreen
+import com.punteradigital.inventory.presentation.settings.UserManagementScreen
 import com.punteradigital.inventory.presentation.traceability.TraceabilityScreen
 import com.punteradigital.inventory.presentation.viewmodel.InventoryViewModel
 import com.punteradigital.inventory.presentation.components.*
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
 @Serializable object PrinterConfigRoute
 @Serializable object QRHistoryRoute
 @Serializable object RackMapRoute
+@Serializable object UserManagementRoute
 
 @Composable
 fun PunteraApp(
@@ -118,12 +120,15 @@ fun PunteraApp(
         exitTransition = { fadeOut(animationSpec = tween(300)) }
     ) {
         composable<Login> {
-            LoginScreen(onLoginSuccess = { user ->
-                viewModel.setCurrentUser(user)
-                navController.navigate(MainHub) {
-                    popUpTo(Login) { inclusive = true }
+            LoginScreen(
+                viewModel = viewModel,
+                onLoginSuccess = { user ->
+                    viewModel.setCurrentUser(user)
+                    navController.navigate(MainHub) {
+                        popUpTo(Login) { inclusive = true }
+                    }
                 }
-            })
+            )
         }
         composable<MainHub> {
             MainDashboard(
@@ -152,6 +157,9 @@ fun PunteraApp(
                 },
                 onNavigateToRackMap = {
                     navController.navigate(RackMapRoute)
+                },
+                onNavigateToUsers = {
+                    navController.navigate(UserManagementRoute)
                 },
                 onLogout = {
                     viewModel.logout()
@@ -197,19 +205,22 @@ fun PunteraApp(
             )
         }
         composable<SettingsRoute> {
+            val currentUser by viewModel.currentUser.collectAsState()
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToCatalog = { navController.navigate(CatalogRoute) },
                 onNavigateToPrinter = { navController.navigate(PrinterConfigRoute) },
                 onNavigateToQRHistory = { navController.navigate(QRHistoryRoute) },
                 onNavigateToRackMap = { navController.navigate(RackMapRoute) },
+                onNavigateToUsers = { navController.navigate(UserManagementRoute) },
                 onLogout = {
                     viewModel.logout()
                     navController.navigate(Login) {
                         popUpTo(MainHub) { inclusive = true }
                     }
                 },
-                themePreferences = themePreferences
+                themePreferences = themePreferences,
+                currentUser = currentUser
             )
         }
         composable<CatalogRoute> {
@@ -246,6 +257,12 @@ fun PunteraApp(
                 onBack = { navController.popBackStack() }
             )
         }
+        composable<UserManagementRoute> {
+            UserManagementScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
 }
 
@@ -262,9 +279,11 @@ fun MainDashboard(
     onNavigateToPrinter: () -> Unit,
     onNavigateToQRHistory: () -> Unit,
     onNavigateToRackMap: () -> Unit,
+    onNavigateToUsers: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val origin by viewModel.currentOrigin.collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -310,7 +329,10 @@ fun MainDashboard(
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
-                beyondViewportPageCount = 1
+                // 0 = only the visible page is composed and active.
+                // beyondViewportPageCount=1 kept 3 pages alive simultaneously,
+                // each subscribing their own DB flows even when off-screen.
+                beyondViewportPageCount = 0
             ) { page ->
                 when (page) {
                     0 -> HomeScreen(
@@ -332,8 +354,10 @@ fun MainDashboard(
                         onNavigateToPrinter = onNavigateToPrinter,
                         onNavigateToQRHistory = onNavigateToQRHistory,
                         onNavigateToRackMap = onNavigateToRackMap,
+                        onNavigateToUsers = onNavigateToUsers,
                         onLogout = onLogout,
-                        themePreferences = themePreferences
+                        themePreferences = themePreferences,
+                        currentUser = currentUser
                     )
                 }
             }

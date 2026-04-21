@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.punteradigital.inventory.data.local.ThemePreferences
+import com.punteradigital.inventory.data.local.entity.UserEntity
 import com.punteradigital.inventory.presentation.components.KineticButton
 import com.punteradigital.inventory.presentation.components.KineticCard
 import com.punteradigital.inventory.presentation.components.ButtonType
@@ -31,8 +32,10 @@ fun SettingsScreen(
     onNavigateToPrinter: () -> Unit,
     onNavigateToQRHistory: () -> Unit = {},
     onNavigateToRackMap: () -> Unit = {},
+    onNavigateToUsers: () -> Unit = {},
     onLogout: () -> Unit = {},
-    themePreferences: ThemePreferences? = null
+    themePreferences: ThemePreferences? = null,
+    currentUser: UserEntity? = null
 ) {
     if (onBack != null) {
         // Standalone mode (navigated via NavController) — own Scaffold with back button
@@ -67,8 +70,10 @@ fun SettingsScreen(
                 onNavigateToPrinter = onNavigateToPrinter,
                 onNavigateToQRHistory = onNavigateToQRHistory,
                 onNavigateToRackMap = onNavigateToRackMap,
+                onNavigateToUsers = onNavigateToUsers,
                 onLogout = onLogout,
-                themePreferences = themePreferences
+                themePreferences = themePreferences,
+                currentUser = currentUser
             )
         }
     } else {
@@ -99,8 +104,10 @@ fun SettingsScreen(
                 onNavigateToPrinter = onNavigateToPrinter,
                 onNavigateToQRHistory = onNavigateToQRHistory,
                 onNavigateToRackMap = onNavigateToRackMap,
+                onNavigateToUsers = onNavigateToUsers,
                 onLogout = onLogout,
-                themePreferences = themePreferences
+                themePreferences = themePreferences,
+                currentUser = currentUser
             )
         }
     }
@@ -113,8 +120,10 @@ fun SettingsContent(
     onNavigateToPrinter: () -> Unit,
     onNavigateToQRHistory: () -> Unit,
     onNavigateToRackMap: () -> Unit,
+    onNavigateToUsers: () -> Unit = {},
     onLogout: () -> Unit,
-    themePreferences: ThemePreferences? = null
+    themePreferences: ThemePreferences? = null,
+    currentUser: UserEntity? = null
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
@@ -199,11 +208,21 @@ fun SettingsContent(
         // Secciones: Cuenta
         item {
             SettingsSection(title = "Cuenta") {
+                // User Management — only visible for ADMIN role
+                if (currentUser?.role == "ADMIN") {
+                    SettingsItem(
+                        icon = Icons.Default.People,
+                        iconColor = Color(0xFF5B5BFF),
+                        label = "Gestión de Usuarios",
+                        desc = "Crear, ver y eliminar usuarios del sistema",
+                        onClick = onNavigateToUsers
+                    )
+                }
                 SettingsItem(
                     icon = Icons.Default.Lock,
                     iconColor = CriticalRed,
                     label = "Cerrar Sesión",
-                    desc = "admin@punteradigital.com",
+                    desc = currentUser?.let { "${it.name} (${it.role})" } ?: "admin@punteradigital.com",
                     onClick = { showLogoutDialog = true }
                 )
             }

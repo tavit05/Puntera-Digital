@@ -91,6 +91,9 @@ fun UnifiedScannerScreen(
     // Verify mode state
     var verifyResult by remember { mutableStateOf<String?>(null) }
 
+    // UUID-not-found feedback
+    var notFoundUuid by remember { mutableStateOf<String?>(null) }
+
     val sheetState = rememberModalBottomSheetState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -117,13 +120,21 @@ fun UnifiedScannerScreen(
     val isRapid = scanType == "RAPID"
 
     fun processScannedUuid(uuid: String) {
+        Log.d("Scanner", "processScannedUuid called with: $uuid, module=$moduleName, isRapid=$isRapid")
+
         if (moduleName == "VERIFY") {
             // Verification mode: just show info about the product
             isPaused = true
             currentQrCode = uuid
             scope.launch {
                 scannedResult = viewModel.getScannedInfo(uuid)
-                showDetailSheet = true
+                if (scannedResult == null) {
+                    Log.w("Scanner", "VERIFY: UUID not found in DB: $uuid")
+                    notFoundUuid = uuid
+                    isPaused = false
+                } else {
+                    showDetailSheet = true
+                }
             }
             return
         }
@@ -152,7 +163,14 @@ fun UnifiedScannerScreen(
             currentQrCode = uuid
             scope.launch {
                 scannedResult = viewModel.getScannedInfo(uuid)
-                showDetailSheet = true
+                if (scannedResult == null) {
+                    Log.w("Scanner", "MANUAL: UUID not found in DB: $uuid")
+                    notFoundUuid = uuid
+                    isPaused = false  // Resume scanning so user can try again
+                } else {
+                    Log.d("Scanner", "UUID found: $uuid -> ${scannedResult!!::class.simpleName}")
+                    showDetailSheet = true
+                }
             }
         }
     }
@@ -197,6 +215,10 @@ fun UnifiedScannerScreen(
                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                 .build()
                                 .also { analysis ->
+                                    // Create scanner ONCE — reused for all frames.
+                                    // Previously created per-frame, leaking ML Kit instances.
+                                    val barcodeScanner = BarcodeScanning.getClient()
+
                                     analysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
                                         if (isPaused) {
                                             imageProxy.close()
@@ -207,9 +229,8 @@ fun UnifiedScannerScreen(
                                         val mediaImage = imageProxy.image
                                         if (mediaImage != null) {
                                             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                                            val scanner = BarcodeScanning.getClient()
 
-                                            scanner.process(image)
+                                            barcodeScanner.process(image)
                                                 .addOnSuccessListener { barcodes ->
                                                     for (barcode in barcodes) {
                                                         barcode.rawValue?.let { qrValue ->
@@ -220,6 +241,10 @@ fun UnifiedScannerScreen(
                                                     }
                                                 }
                                                 .addOnCompleteListener { imageProxy.close() }
+                                        } else {
+                                            // Must close imageProxy even when mediaImage is null,
+                                            // otherwise the camera pipeline stalls (frame starvation).
+                                            imageProxy.close()
                                         }
                                     }
                                 }
@@ -469,6 +494,66 @@ fun UnifiedScannerScreen(
                             showClienteModal = false
                             isPaused = false
                         }) { Text("CANCELAR") }
+                    }
+                )
+            }
+
+            // ═══ UUID NOT FOUND FEEDBACK ═══
+            if (notFoundUuid != null) {
+                AlertDialog(
+                    onDismissRequest = { notFoundUuid = null },
+                    icon = {
+                        Icon(
+                            Icons.Default.SearchOff,
+                            contentDescription = null,
+                            tint = CriticalRed,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    },
+                    title = {
+                        Text(
+                            "UUID No Registrado",
+                            fontWeight = FontWeight.Bold,
+                            color = CriticalRed
+                        )
+                    },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                "El código escaneado no fue encontrado en la base de datos del sistema.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
+                                Text(
+                                    notFoundUuid ?: "",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = SpaceGrotesk,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                            Text(
+                                "Posibles causas:\n• El QR pertenece a otro sistema\n• El producto fue eliminado\n• Error de lectura del código",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        KineticButton(
+                            text = "REINTENTAR",
+                            onClick = { notFoundUuid = null },
+                            type = ButtonType.PRIMARY
+                        )
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { notFoundUuid = null }) {
+                            Text("CERRAR")
+                        }
                     }
                 )
             }

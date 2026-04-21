@@ -1,5 +1,6 @@
 package com.punteradigital.inventory.presentation.inbound
 
+import android.content.res.Configuration
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,6 +72,10 @@ fun EntryScreen(viewModel: InventoryViewModel) {
     val autoBox = if (isMasterBox && totalQty > 0 && pairsPerBox > 0)
         BusinessRules.calculateAutoBoxing(totalQty, pairsPerBox) else null
 
+    // Landscape detection
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     // Update theme on origin change
     LaunchedEffect(selectedOrigin) {
         viewModel.setOrigin(selectedOrigin)
@@ -101,9 +107,9 @@ fun EntryScreen(viewModel: InventoryViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(if (isLandscape) 12.dp else 16.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp)
             ) {
                 // ═══ ORIGIN SELECTOR ═══
                 KineticCard(
@@ -142,10 +148,10 @@ fun EntryScreen(viewModel: InventoryViewModel) {
 
                 // ═══ DATA CAPTURE ═══
                 KineticCard(
-                    padding = 20.dp
+                    padding = if (isLandscape) 16.dp else 20.dp
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp)
                     ) {
                         Text(
                             "Datos del Producto",
@@ -153,111 +159,228 @@ fun EntryScreen(viewModel: InventoryViewModel) {
                             color = MaterialTheme.colorScheme.primary
                         )
 
-                        // Entry Type
-                        ExposedDropdownMenuBox(
-                            expanded = entryTypeExpanded,
-                            onExpandedChange = { entryTypeExpanded = it },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            KineticTextField(
-                                value = selectedEntryType,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = "Tipo de Entrada",
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = entryTypeExpanded) },
-                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(expanded = entryTypeExpanded, onDismissRequest = { entryTypeExpanded = false }) {
-                                entryTypes.forEach { item ->
-                                    DropdownMenuItem(text = { Text(item) }, onClick = { selectedEntryType = item; entryTypeExpanded = false })
-                                }
-                            }
-                        }
-
-                        // Model
-                        ExposedDropdownMenuBox(
-                            expanded = modelExpanded,
-                            onExpandedChange = { modelExpanded = it },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            KineticTextField(
-                                value = selectedModel,
-                                onValueChange = {},
-                                readOnly = true,
-                                label = "Modelo",
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
-                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(expanded = modelExpanded, onDismissRequest = { modelExpanded = false }) {
-                                models.forEach { item ->
-                                    DropdownMenuItem(text = { Text(item) }, onClick = { selectedModel = item; modelExpanded = false })
-                                }
-                            }
-                        }
-
-                        // Size & Lot
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            ExposedDropdownMenuBox(
-                                expanded = sizeExpanded,
-                                onExpandedChange = { sizeExpanded = it },
-                                modifier = Modifier.weight(1f)
+                        if (isLandscape) {
+                            // Landscape: 2-column layout for form fields
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                KineticTextField(
-                                    value = selectedSize,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = "Talla",
-                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
-                                )
-                                ExposedDropdownMenu(expanded = sizeExpanded, onDismissRequest = { sizeExpanded = false }) {
-                                    sizes.forEach { item ->
-                                        DropdownMenuItem(text = { Text(item) }, onClick = { selectedSize = item; sizeExpanded = false })
+                                // Column 1: Entry Type + Model
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    ExposedDropdownMenuBox(
+                                        expanded = entryTypeExpanded,
+                                        onExpandedChange = { entryTypeExpanded = it },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        KineticTextField(
+                                            value = selectedEntryType,
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = "Tipo de Entrada",
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = entryTypeExpanded) },
+                                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                        )
+                                        ExposedDropdownMenu(expanded = entryTypeExpanded, onDismissRequest = { entryTypeExpanded = false }) {
+                                            entryTypes.forEach { item ->
+                                                DropdownMenuItem(text = { Text(item) }, onClick = { selectedEntryType = item; entryTypeExpanded = false })
+                                            }
+                                        }
+                                    }
+
+                                    ExposedDropdownMenuBox(
+                                        expanded = modelExpanded,
+                                        onExpandedChange = { modelExpanded = it },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        KineticTextField(
+                                            value = selectedModel,
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = "Modelo",
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
+                                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                        )
+                                        ExposedDropdownMenu(expanded = modelExpanded, onDismissRequest = { modelExpanded = false }) {
+                                            models.forEach { item ->
+                                                DropdownMenuItem(text = { Text(item) }, onClick = { selectedModel = item; modelExpanded = false })
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                            KineticTextField(
-                                value = lot,
-                                onValueChange = { lot = it },
-                                label = "Lote",
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
 
-                        // ═══ RACK LOCATION ═══
-                        ExposedDropdownMenuBox(
-                            expanded = rackExpanded,
-                            onExpandedChange = { rackExpanded = it },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            KineticTextField(
-                                value = "📍 Rack: $selectedRack",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = "Ubicación en Rack",
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rackExpanded) },
-                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(expanded = rackExpanded, onDismissRequest = { rackExpanded = false }) {
-                                rackLocations.forEach { rack ->
-                                    DropdownMenuItem(
-                                        text = { Text(if (rack == "PISO") "📦 PISO (Sin rack)" else "📍 $rack") },
-                                        onClick = { selectedRack = rack; rackExpanded = false }
+                                // Column 2: Size+Lot, Rack, Quantity
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        ExposedDropdownMenuBox(
+                                            expanded = sizeExpanded,
+                                            onExpandedChange = { sizeExpanded = it },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            KineticTextField(
+                                                value = selectedSize,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = "Talla",
+                                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                            )
+                                            ExposedDropdownMenu(expanded = sizeExpanded, onDismissRequest = { sizeExpanded = false }) {
+                                                sizes.forEach { item ->
+                                                    DropdownMenuItem(text = { Text(item) }, onClick = { selectedSize = item; sizeExpanded = false })
+                                                }
+                                            }
+                                        }
+                                        KineticTextField(
+                                            value = lot,
+                                            onValueChange = { lot = it },
+                                            label = "Lote",
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+
+                                    ExposedDropdownMenuBox(
+                                        expanded = rackExpanded,
+                                        onExpandedChange = { rackExpanded = it },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        KineticTextField(
+                                            value = "📍 Rack: $selectedRack",
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = "Ubicación en Rack",
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rackExpanded) },
+                                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                        )
+                                        ExposedDropdownMenu(expanded = rackExpanded, onDismissRequest = { rackExpanded = false }) {
+                                            rackLocations.forEach { rack ->
+                                                DropdownMenuItem(
+                                                    text = { Text(if (rack == "PISO") "📦 PISO (Sin rack)" else "📍 $rack") },
+                                                    onClick = { selectedRack = rack; rackExpanded = false }
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    KineticTextField(
+                                        value = totalQuantity,
+                                        onValueChange = { totalQuantity = it },
+                                        label = "🔢 Cantidad Total *",
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
                             }
-                        }
+                        } else {
+                            // Portrait: standard vertical layout
+                            ExposedDropdownMenuBox(
+                                expanded = entryTypeExpanded,
+                                onExpandedChange = { entryTypeExpanded = it },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                KineticTextField(
+                                    value = selectedEntryType,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = "Tipo de Entrada",
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = entryTypeExpanded) },
+                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(expanded = entryTypeExpanded, onDismissRequest = { entryTypeExpanded = false }) {
+                                    entryTypes.forEach { item ->
+                                        DropdownMenuItem(text = { Text(item) }, onClick = { selectedEntryType = item; entryTypeExpanded = false })
+                                    }
+                                }
+                            }
 
-                        // ═══ TOTAL QUANTITY ═══
-                        KineticTextField(
-                            value = totalQuantity,
-                            onValueChange = { totalQuantity = it },
-                            label = "🔢 Cantidad Total a Ingresar *",
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                            ExposedDropdownMenuBox(
+                                expanded = modelExpanded,
+                                onExpandedChange = { modelExpanded = it },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                KineticTextField(
+                                    value = selectedModel,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = "Modelo",
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
+                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(expanded = modelExpanded, onDismissRequest = { modelExpanded = false }) {
+                                    models.forEach { item ->
+                                        DropdownMenuItem(text = { Text(item) }, onClick = { selectedModel = item; modelExpanded = false })
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                ExposedDropdownMenuBox(
+                                    expanded = sizeExpanded,
+                                    onExpandedChange = { sizeExpanded = it },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    KineticTextField(
+                                        value = selectedSize,
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = "Talla",
+                                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                    )
+                                    ExposedDropdownMenu(expanded = sizeExpanded, onDismissRequest = { sizeExpanded = false }) {
+                                        sizes.forEach { item ->
+                                            DropdownMenuItem(text = { Text(item) }, onClick = { selectedSize = item; sizeExpanded = false })
+                                        }
+                                    }
+                                }
+                                KineticTextField(
+                                    value = lot,
+                                    onValueChange = { lot = it },
+                                    label = "Lote",
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
+                            ExposedDropdownMenuBox(
+                                expanded = rackExpanded,
+                                onExpandedChange = { rackExpanded = it },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                KineticTextField(
+                                    value = "📍 Rack: $selectedRack",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = "Ubicación en Rack",
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rackExpanded) },
+                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(expanded = rackExpanded, onDismissRequest = { rackExpanded = false }) {
+                                    rackLocations.forEach { rack ->
+                                        DropdownMenuItem(
+                                            text = { Text(if (rack == "PISO") "📦 PISO (Sin rack)" else "📍 $rack") },
+                                            onClick = { selectedRack = rack; rackExpanded = false }
+                                        )
+                                    }
+                                }
+                            }
+
+                            KineticTextField(
+                                value = totalQuantity,
+                                onValueChange = { totalQuantity = it },
+                                label = "🔢 Cantidad Total a Ingresar *",
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
 

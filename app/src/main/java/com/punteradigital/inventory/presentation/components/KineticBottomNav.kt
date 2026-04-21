@@ -1,5 +1,6 @@
 package com.punteradigital.inventory.presentation.components
 
+import android.content.res.Configuration
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,11 +56,21 @@ fun KineticBottomNavBar(
     // Determine if using a dark theme by checking background luminance
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.3f
 
+    // Landscape detection for compact mode
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    val barHeight = if (isLandscape) 52.dp else 72.dp
+    val barCorner = if (isLandscape) 26.dp else 36.dp
+    val bottomPadding = if (isLandscape) 8.dp else 20.dp
+    val horizontalPadding = if (isLandscape) 32.dp else 16.dp
+    val iconSize = if (isLandscape) 20.dp else 24.dp
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 20.dp),
+            .padding(horizontal = horizontalPadding)
+            .padding(bottom = bottomPadding),
         contentAlignment = Alignment.BottomCenter
     ) {
         // ═══ GLOW LAYER (behind the bar) ═══
@@ -75,7 +87,7 @@ fun KineticBottomNavBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(barHeight + 8.dp)
                 .drawBehind {
                     val tabWidth = size.width / items.size
                     val centerX = tabWidth * glowOffsetX + tabWidth / 2
@@ -121,14 +133,14 @@ fun KineticBottomNavBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .height(barHeight)
                 .shadow(
-                    elevation = 24.dp,
-                    shape = RoundedCornerShape(36.dp),
+                    elevation = if (isLandscape) 16.dp else 24.dp,
+                    shape = RoundedCornerShape(barCorner),
                     ambientColor = shadowAmbient,
                     spotColor = shadowSpot
                 )
-                .clip(RoundedCornerShape(36.dp))
+                .clip(RoundedCornerShape(barCorner))
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(barTopColor, barMidColor, barBotColor)
@@ -146,7 +158,7 @@ fun KineticBottomNavBar(
                                 Color.White.copy(alpha = 0f)
                             )
                         ),
-                        cornerRadius = CornerRadius(36f, 36f),
+                        cornerRadius = CornerRadius(barCorner.value, barCorner.value),
                         size = Size(size.width, 1.5f)
                     )
                 },
@@ -157,7 +169,11 @@ fun KineticBottomNavBar(
 
                 // Animated values
                 val scale by animateFloatAsState(
-                    targetValue = if (isSelected) 1.15f else 0.9f,
+                    targetValue = if (isSelected) {
+                        if (isLandscape) 1.08f else 1.15f
+                    } else {
+                        if (isLandscape) 0.95f else 0.9f
+                    },
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
@@ -184,7 +200,9 @@ fun KineticBottomNavBar(
                 )
 
                 val verticalOffset by animateFloatAsState(
-                    targetValue = if (isSelected) -6f else 0f,
+                    targetValue = if (isSelected) {
+                        if (isLandscape) -3f else -6f
+                    } else 0f,
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
@@ -215,11 +233,11 @@ fun KineticBottomNavBar(
                         if (isSelected) {
                             Box(
                                 modifier = Modifier
-                                    .size(4.dp)
+                                    .size(if (isLandscape) 3.dp else 4.dp)
                                     .background(primaryColor, CircleShape)
                                     .graphicsLayer { alpha = iconAlpha }
                             )
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(if (isLandscape) 2.dp else 4.dp))
                         }
 
                         // Icon
@@ -228,16 +246,16 @@ fun KineticBottomNavBar(
                             contentDescription = item.label,
                             tint = iconColor,
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(iconSize)
                                 .graphicsLayer { alpha = iconAlpha }
                         )
 
                         // Label (only visible when selected)
                         if (isSelected) {
-                            Spacer(Modifier.height(2.dp))
+                            Spacer(Modifier.height(if (isLandscape) 1.dp else 2.dp))
                             Text(
                                 text = item.label,
-                                fontSize = 9.sp,
+                                fontSize = if (isLandscape) 8.sp else 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = primaryColor,
                                 fontFamily = SpaceGrotesk,

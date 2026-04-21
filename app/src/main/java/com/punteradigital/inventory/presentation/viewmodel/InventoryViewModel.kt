@@ -43,6 +43,11 @@ class InventoryViewModel @Inject constructor(
     val soundManager: SoundManager
 ) : ViewModel() {
 
+    // Cached formatters — SimpleDateFormat is expensive to construct.
+    // Thread-safe here because all usage is within single coroutines.
+    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+
     private val _uiState = MutableStateFlow<InventoryUiState>(InventoryUiState.Idle)
     val uiState: StateFlow<InventoryUiState> = _uiState.asStateFlow()
 
@@ -52,38 +57,48 @@ class InventoryViewModel @Inject constructor(
     private val _currentOrigin = MutableStateFlow(Origin.FOOT_SAFE)
     val currentOrigin: StateFlow<Origin> = _currentOrigin.asStateFlow()
 
-    // Dashboard flows
+    // ═══ ALWAYS-ON FLOWS — used globally (HomeScreen counters, nav badge) ═══
+    // These are intentionally eager: they are observed on every screen via the bottom AppBar.
     val inventoryStatus: Flow<List<BatchStatus>> = dao.getInventoryStatusByBatch()
-    val traceabilityMovements: Flow<List<MovementEntity>> = dao.getAllMovements()
     val totalAvailable: Flow<Int> = dao.getTotalAvailableCount()
     val totalStandBy: Flow<Int> = dao.getTotalStandByCount()
     val totalMasterBoxes: Flow<Int> = dao.getTotalMasterBoxCount()
     val pendingSyncCount: Flow<Int> = dao.getPendingSyncCount()
 
-    // Stand-By items for dispatch list
-    val standByItems: Flow<List<ProductEntity>> = dao.getStandByProducts()
+    // ═══ LAZY FLOWS — activated only when the corresponding screen is open ═══
+    // Using `by lazy` means Room only registers an InvalidationTracker observer
+    // when the screen that collects this flow is actually composed/visible.
 
-    // Active muestras
-    val muestrasActivas: Flow<List<ProductEntity>> = dao.getMuestrasActivas()
+    /** Home screen recent movements list */
+    val traceabilityMovements: Flow<List<MovementEntity>> by lazy { dao.getAllMovements() }
 
-    // Incomplete master boxes for refill
-    val incompleteMasterBoxes: Flow<List<MasterBoxEntity>> = dao.getIncompleteMasterBoxes()
+    /** Dispatch list screen — STB items */
+    val standByItems: Flow<List<ProductEntity>> by lazy { dao.getStandByProducts() }
 
-    // ═══ Analytics Flows (Traceability Intelligence) ═══
-    val topDispatchedModels = dao.getTopDispatchedModels()
-    val topDispatchedSizes = dao.getTopDispatchedSizes()
-    val topClients = dao.getTopClients()
-    val modelStatusBreakdown = dao.getModelStatusBreakdown()
-    val allModelsInventory = dao.getAllModelsInventory()
-    val allSizesInventory = dao.getAllSizesInventory()
-    val totalDispatched = dao.getTotalDispatchedCount()
-    val totalMovements = dao.getTotalMovementCount()
+    /** Muestras screen */
+    val muestrasActivas: Flow<List<ProductEntity>> by lazy { dao.getMuestrasActivas() }
 
-    // ═══ Rack Map Flows ═══
-    val rackOccupancy = dao.getProductCountByLocation()
+    /** Refill screen — incomplete master boxes */
+    val incompleteMasterBoxes: Flow<List<MasterBoxEntity>> by lazy { dao.getIncompleteMasterBoxes() }
 
-    // ═══ QR History Flows ═══
-    val entryMovements = dao.getEntryMovements()
+    /** User management screen */
+    val allUsers: Flow<List<UserEntity>> by lazy { dao.getAllUsers() }
+
+    // ═══ ANALYTICS FLOWS — only needed in Traceability screen (tab 3) ═══
+    val topDispatchedModels by lazy { dao.getTopDispatchedModels() }
+    val topDispatchedSizes by lazy { dao.getTopDispatchedSizes() }
+    val topClients by lazy { dao.getTopClients() }
+    val modelStatusBreakdown by lazy { dao.getModelStatusBreakdown() }
+    val allModelsInventory by lazy { dao.getAllModelsInventory() }
+    val allSizesInventory by lazy { dao.getAllSizesInventory() }
+    val totalDispatched by lazy { dao.getTotalDispatchedCount() }
+    val totalMovements by lazy { dao.getTotalMovementCount() }
+
+    // ═══ RACK MAP — only needed in RackMapScreen ═══
+    val rackOccupancy by lazy { dao.getProductCountByLocation() }
+
+    // ═══ QR HISTORY — only needed in QRHistoryScreen ═══
+    val entryMovements by lazy { dao.getEntryMovements() }
 
     // ═══ QR Search State ═══
     private val _qrSearchResults = MutableStateFlow<List<ProductEntity>>(emptyList())
@@ -104,13 +119,17 @@ class InventoryViewModel @Inject constructor(
     }
 
     init {
-        // Auto-sync when connectivity restores
+        // Auto-sync when connectivity restores — only if there are pending items
         viewModelScope.launch {
             connectivityMonitor.isOnline.collect { isOnline ->
                 if (isOnline) {
-                    val synced = syncManager.processPendingQueue()
-                    if (synced > 0) {
-                        Log.i("InventoryVM", "Auto-synced $synced pending items")
+                    // Check pending count first to avoid unnecessary processing
+                    val pendingCount = dao.getPendingSyncItems().size
+                    if (pendingCount > 0) {
+                        val synced = syncManager.processPendingQueue()
+                        if (synced > 0) {
+                            Log.i("InventoryVM", "Auto-synced $synced/$pendingCount pending items")
+                        }
                     }
                 }
             }
@@ -144,6 +163,95 @@ class InventoryViewModel @Inject constructor(
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // USER MANAGEMENT (Admin-only CRUD)
+    // ═══════════════════════════════════════════════════════════════
+    // NOTE: allUsers is declared above as a lazy Flow (line ~80)
+
+    fun createUser(name: String, pin: String, role: String) {
+        viewModelScope.launch {
+            try {
+                // Check if PIN already exists
+                val existing = dao.getUserByPin(pin)
+                if (existing != null) {
+                    _uiState.value = InventoryUiState.Error("Ya existe un usuario con ese PIN.")
+                    return@launch
+                }
+
+                val id = name.lowercase().replace(" ", "_") + "_" + System.currentTimeMillis().toString().takeLast(4)
+                val user = UserEntity(
+                    id = id,
+                    name = name,
+                    pin = pin,
+                    role = role
+                )
+                dao.insertUser(user)
+                _uiState.value = InventoryUiState.SuccessMovement("Usuario '$name' creado exitosamente con rol $role")
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al crear usuario: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteUser(userId: String) {
+        viewModelScope.launch {
+            try {
+                val user = dao.getUserById(userId)
+                if (user == null) {
+                    _uiState.value = InventoryUiState.Error("Usuario no encontrado.")
+                    return@launch
+                }
+
+                // Prevent deleting the last admin
+                if (user.role == "ADMIN") {
+                    val adminCount = dao.getAdminCount()
+                    if (adminCount <= 1) {
+                        _uiState.value = InventoryUiState.Error("No se puede eliminar el último administrador del sistema.")
+                        return@launch
+                    }
+                }
+
+                // Prevent self-deletion
+                if (_currentUser.value?.id == userId) {
+                    _uiState.value = InventoryUiState.Error("No puedes eliminarte a ti mismo.")
+                    return@launch
+                }
+
+                dao.deleteUser(userId)
+                _uiState.value = InventoryUiState.SuccessMovement("Usuario '${user.name}' eliminado.")
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al eliminar usuario: ${e.message}")
+            }
+        }
+    }
+
+    /** Dynamic PIN-based authentication against the database */
+    suspend fun authenticateByPin(pin: String): UserEntity? {
+        return dao.getUserByPin(pin)
+    }
+
+    /** Seed the default admin user if the users table is empty */
+    fun seedDefaultAdminIfNeeded() {
+        viewModelScope.launch {
+            val count = dao.getUserCount()
+            if (count == 0) {
+                dao.insertUser(UserEntity(
+                    id = "admin_default",
+                    name = "Administrador",
+                    pin = "1234",
+                    role = "ADMIN"
+                ))
+                dao.insertUser(UserEntity(
+                    id = "operador_default",
+                    name = "Operador",
+                    pin = "0000",
+                    role = "OPERADOR"
+                ))
+                Log.i("InventoryVM", "Seeded default admin and operator users")
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // ENTRY MODULE (Registro de Nacimiento) — with Auto-Boxing
     // ═══════════════════════════════════════════════════════════════
     fun processNewEntry(
@@ -164,8 +272,6 @@ class InventoryViewModel @Inject constructor(
             val timestamp = System.currentTimeMillis()
             val allUuids = mutableListOf<String>()
             val printItems = mutableListOf<PrintLabelItem>()
-            val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             val movementsDto = mutableListOf<InventoryMovementDto>()
 
             try {
@@ -332,15 +438,16 @@ class InventoryViewModel @Inject constructor(
                 if (!printSuccess) warnings.add("Impresión encolada: se enviará al restaurar conexión con BarTender.")
                 if (!sheetsSuccess) warnings.add("Sincronización encolada: se enviará al restaurar conexión a internet.")
 
+                // Reuse the autoBox already calculated at the start of the if(isMasterBox) block
                 val confirmationMessage = if (isMasterBox) {
-                    val autoBox = BusinessRules.calculateAutoBoxing(totalQuantity, childCount)
-                    if (autoBox.hasRemainder) {
+                    val boxSummary = BusinessRules.calculateAutoBoxing(totalQuantity, childCount)
+                    if (boxSummary.hasRemainder) {
                         when (remainderMode) {
-                            RemainderMode.LOOSE -> "${autoBox.fullBoxes} Caja(s) Master y ${autoBox.remainderPairs} unidad(es) sueltas"
-                            RemainderMode.FILL_LATER -> "${autoBox.fullBoxes} Caja(s) Master completas y 1 Incompleta (${autoBox.remainderPairs}/$childCount)"
+                            RemainderMode.LOOSE -> "${boxSummary.fullBoxes} Caja(s) Master y ${boxSummary.remainderPairs} unidad(es) sueltas"
+                            RemainderMode.FILL_LATER -> "${boxSummary.fullBoxes} Caja(s) Master completas y 1 Incompleta (${boxSummary.remainderPairs}/$childCount)"
                         }
                     } else {
-                        "${autoBox.fullBoxes} Caja(s) Master completas"
+                        "${boxSummary.fullBoxes} Caja(s) Master completas"
                     }
                 } else {
                     "$totalQuantity unidad(es) individuales sueltas"
@@ -642,11 +749,8 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    /** Verification scan — tells operator if a specific UUID is in the dispatch selection */
-    fun verifyUuidInStandBy(uuid: String): Boolean {
-        // Note: this is a synchronous check against the current standByItems
-        return true // The UI will check against its selected list
-    }
+    // verifyUuidInStandBy was removed — it was dead code (always returned true).
+    // The UI checks against its own selected list directly.
 
     // Legacy dispatch batch for backward compat during transition
     private val _dispatchBatch = MutableStateFlow<List<ProductEntity>>(emptyList())
@@ -920,14 +1024,37 @@ class InventoryViewModel @Inject constructor(
     // SCANNER HELPER
     // ═══════════════════════════════════════════════════════════════
     suspend fun getScannedInfo(uuid: String): ScannedInfo? {
+        Log.d("InventoryVM", "getScannedInfo lookup: '$uuid'")
+
+        // Try exact master box match
         val masterBox = dao.getMasterBoxByUuid(uuid)
         if (masterBox != null) {
+            Log.d("InventoryVM", "Found as MasterBox: ${masterBox.uuid} (${masterBox.model} T.${masterBox.size})")
             return ScannedInfo.Master(masterBox)
         }
+
+        // Try exact product match
         val product = dao.getProductByUuid(uuid)
         if (product != null) {
+            Log.d("InventoryVM", "Found as Product: ${product.uuid} (${product.model} T.${product.size} status=${product.status})")
             return ScannedInfo.UnitInfo(product)
         }
+
+        // Try trimmed UUID (sometimes QR readers add whitespace/newlines)
+        val trimmedUuid = uuid.trim()
+        if (trimmedUuid != uuid) {
+            Log.d("InventoryVM", "Retrying with trimmed UUID: '$trimmedUuid'")
+            val trimmedProduct = dao.getProductByUuid(trimmedUuid)
+            if (trimmedProduct != null) {
+                return ScannedInfo.UnitInfo(trimmedProduct)
+            }
+            val trimmedBox = dao.getMasterBoxByUuid(trimmedUuid)
+            if (trimmedBox != null) {
+                return ScannedInfo.Master(trimmedBox)
+            }
+        }
+
+        Log.w("InventoryVM", "UUID NOT FOUND in database: '$uuid' (length=${uuid.length})")
         return null
     }
 
@@ -950,8 +1077,7 @@ class InventoryViewModel @Inject constructor(
         model: String, size: String, lot: String,
         origin: Origin, timestamp: Long, userId: String
     ): InventoryMovementDto {
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        // Uses class-level dateFormat/timeFormat to avoid repeated construction
         return InventoryMovementDto(
             date = dateFormat.format(Date(timestamp)),
             time = timeFormat.format(Date(timestamp)),

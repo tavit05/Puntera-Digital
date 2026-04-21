@@ -24,16 +24,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.punteradigital.inventory.data.local.entity.UserEntity
+import com.punteradigital.inventory.presentation.viewmodel.InventoryViewModel
 import com.punteradigital.inventory.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
+    viewModel: InventoryViewModel,
     onLoginSuccess: (UserEntity) -> Unit
 ) {
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
 
+    val scope = rememberCoroutineScope()
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
+    // Seed default users on first launch
+    LaunchedEffect(Unit) {
+        viewModel.seedDefaultAdminIfNeeded()
+    }
 
     Box(
         modifier = Modifier
@@ -131,10 +141,15 @@ fun LoginScreen(
 
                     Button(
                         onClick = {
-                            when (pin) {
-                                "1234" -> onLoginSuccess(UserEntity("USER_001", "Admin Almacén", "1234", "ADMIN"))
-                                "0000" -> onLoginSuccess(UserEntity("USER_002", "Auxiliar 1", "0000", "OPERADOR"))
-                                else -> error = "PIN incorrecto"
+                            isLoading = true
+                            scope.launch {
+                                val authenticatedUser = viewModel.authenticateByPin(pin)
+                                isLoading = false
+                                if (authenticatedUser != null) {
+                                    onLoginSuccess(authenticatedUser)
+                                } else {
+                                    error = "PIN incorrecto — usuario no encontrado"
+                                }
                             }
                         },
                         modifier = Modifier
@@ -145,11 +160,19 @@ fun LoginScreen(
                             containerColor = FootSafeYellow,
                             contentColor = FootSafeBlack
                         ),
-                        enabled = pin.length == 4
+                        enabled = pin.length == 4 && !isLoading
                     ) {
-                        Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("ACCEDER", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = FootSafeBlack
+                            )
+                        } else {
+                            Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("ACCEDER", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
                     }
 
                     Text(

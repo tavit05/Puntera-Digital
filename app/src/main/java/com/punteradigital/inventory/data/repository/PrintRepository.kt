@@ -35,6 +35,12 @@ class PrintRepository @Inject constructor(
         private const val BACKOFF_MULTIPLIER = 2.0
     }
 
+    // Cached client — avoids rebuilding TCP connection pools on every print call.
+    // Invalidated when printer IP/port configuration changes.
+    private var cachedBaseUrl: String? = null
+    private var cachedPrintService: PrintService? = null
+    private var cachedOkHttpClient: OkHttpClient? = null
+
     /**
      * Result of a print operation.
      */
@@ -176,21 +182,37 @@ class PrintRepository @Inject constructor(
     }
 
     /**
-     * Builds a PrintService with the current dynamic config.
+     * Builds or returns a cached PrintService.
+     * Only rebuilds OkHttpClient+Retrofit when IP/port/timeout changes.
+     * This allows TCP connection reuse (keep-alive) across multiple print jobs.
      */
     private fun buildPrintService(): PrintService {
-        val client = OkHttpClient.Builder()
-            .connectTimeout(printerPreferences.timeoutSeconds.toLong(), TimeUnit.SECONDS)
-            .readTimeout(printerPreferences.timeoutSeconds.toLong(), TimeUnit.SECONDS)
-            .writeTimeout(printerPreferences.timeoutSeconds.toLong(), TimeUnit.SECONDS)
-            .build()
+        val currentBaseUrl = printerPreferences.getBaseUrl()
+        val currentTimeout = printerPreferences.timeoutSeconds
 
+        // Return cached instance if config hasn't changed
+        val existing = cachedPrintService
+        if (existing != null && cachedBaseUrl == currentBaseUrl) {
+            return existing
+        }
+
+        // Config changed or first call — build new client
+        Log.d(TAG, "Building new PrintService for $currentBaseUrl")
+        val client = OkHttpClient.Builder()
+            .connectTimeout(currentTimeout.toLong(), TimeUnit.SECONDS)
+            .readTimeout(currentTimeout.toLong(), TimeUnit.SECONDS)
+            .writeTimeout(currentTimeout.toLong(), TimeUnit.SECONDS)
+            .build()
         val retrofit = Retrofit.Builder()
-            .baseUrl(printerPreferences.getBaseUrl())
+            .baseUrl(currentBaseUrl)
             .client(client)
             .build()
+        val service = retrofit.create(PrintService::class.java)
 
-        return retrofit.create(PrintService::class.java)
+        cachedOkHttpClient = client
+        cachedPrintService = service
+        cachedBaseUrl = currentBaseUrl
+        return service
     }
 
     /**
