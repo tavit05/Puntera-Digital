@@ -69,7 +69,10 @@ class InventoryViewModel @Inject constructor(
     // Using `by lazy` means Room only registers an InvalidationTracker observer
     // when the screen that collects this flow is actually composed/visible.
 
-    /** Home screen recent movements list */
+    /** Home screen recent movements — LIMIT 20 to avoid loading entire table */
+    val recentMovements: Flow<List<MovementEntity>> by lazy { dao.getRecentMovements(20) }
+
+    /** Full movement history — only for Traceability tab (lazy: Room observer starts on first collect) */
     val traceabilityMovements: Flow<List<MovementEntity>> by lazy { dao.getAllMovements() }
 
     /** Dispatch list screen — STB items */
@@ -154,7 +157,6 @@ class InventoryViewModel @Inject constructor(
     fun logout() {
         _currentUser.value = null
         _uiState.value = InventoryUiState.Idle
-        _dispatchBatch.value = emptyList()
         _currentOrigin.value = Origin.FOOT_SAFE
     }
 
@@ -441,13 +443,16 @@ class InventoryViewModel @Inject constructor(
                 // Reuse the autoBox already calculated at the start of the if(isMasterBox) block
                 val confirmationMessage = if (isMasterBox) {
                     val boxSummary = BusinessRules.calculateAutoBoxing(totalQuantity, childCount)
-                    if (boxSummary.hasRemainder) {
-                        when (remainderMode) {
-                            RemainderMode.LOOSE -> "${boxSummary.fullBoxes} Caja(s) Master y ${boxSummary.remainderPairs} unidad(es) sueltas"
-                            RemainderMode.FILL_LATER -> "${boxSummary.fullBoxes} Caja(s) Master completas y 1 Incompleta (${boxSummary.remainderPairs}/$childCount)"
+                    buildString {
+                        append("${boxSummary.fullBoxes} Caja(s) Master")
+                        if (boxSummary.hasRemainder) {
+                            when (remainderMode) {
+                                RemainderMode.LOOSE -> append(" y ${boxSummary.remainderPairs} unidad(es) sueltas")
+                                RemainderMode.FILL_LATER -> append(" completas y 1 Incompleta (${boxSummary.remainderPairs}/$childCount)")
+                            }
+                        } else {
+                            append(" completas")
                         }
-                    } else {
-                        "${boxSummary.fullBoxes} Caja(s) Master completas"
                     }
                 } else {
                     "$totalQuantity unidad(es) individuales sueltas"
@@ -751,73 +756,8 @@ class InventoryViewModel @Inject constructor(
 
     // verifyUuidInStandBy was removed — it was dead code (always returned true).
     // The UI checks against its own selected list directly.
-
-    // Legacy dispatch batch for backward compat during transition
-    private val _dispatchBatch = MutableStateFlow<List<ProductEntity>>(emptyList())
-    val dispatchBatch: StateFlow<List<ProductEntity>> = _dispatchBatch.asStateFlow()
-
-    fun addToDispatchBatch(uuid: String) {
-        viewModelScope.launch {
-            val product = dao.getProductByUuid(uuid)
-            if (product == null) {
-                _uiState.value = InventoryUiState.Error("UUID no encontrado: $uuid")
-                soundManager.playErrorBeep()
-                return@launch
-            }
-            if (product.status != "STB") {
-                _uiState.value = InventoryUiState.Error("Producto no está en Stand-By. Estado: ${product.status}")
-                soundManager.playErrorBeep()
-                return@launch
-            }
-            if (_dispatchBatch.value.any { it.uuid == uuid }) {
-                soundManager.playErrorBeep()
-                return@launch
-            }
-            val current = _dispatchBatch.value.toMutableList()
-            current.add(product)
-            _dispatchBatch.value = current
-            val batchValidation = BusinessRules.validateNoMixedOrigins(current)
-            if (!batchValidation.isValid) {
-                soundManager.playCriticalAlert()
-                _uiState.value = InventoryUiState.PokayokeAlert(batchValidation.errorMessage!!)
-            } else {
-                detectOriginFromUuid(uuid)
-                soundManager.playSuccessBeep()
-            }
-        }
-    }
-
-    fun clearDispatchBatch() {
-        _dispatchBatch.value = emptyList()
-    }
-
-    fun confirmDispatch(userId: String) {
-        viewModelScope.launch {
-            val batch = _dispatchBatch.value
-            if (batch.isEmpty()) return@launch
-            val validation = BusinessRules.validateNoMixedOrigins(batch)
-            if (!validation.isValid) {
-                soundManager.playCriticalAlert()
-                _uiState.value = InventoryUiState.PokayokeAlert(validation.errorMessage!!)
-                return@launch
-            }
-            _uiState.value = InventoryUiState.Loading("Procesando despacho...")
-            for (product in batch) {
-                dao.updateProductStatus(product.uuid, "DISPATCHED", "DESPACHADO")
-                dao.insertMovement(MovementEntity(
-                    uuid = product.uuid, type = "OUT", reason = "Despacho",
-                    location = "DESPACHADO", userId = userId
-                ))
-                if (product.parentUuid != null) {
-                    updateMasterBoxCompleteness(product.parentUuid)
-                }
-            }
-            _dispatchBatch.value = emptyList()
-            _uiState.value = InventoryUiState.SuccessMovement(
-                "Despacho completado: ${batch.size} unidades procesadas"
-            )
-        }
-    }
+    // Legacy dispatch batch system (addToDispatchBatch, confirmDispatch, clearDispatchBatch)
+    // was removed — superseded by confirmDispatchFromList().
 
     // ═══════════════════════════════════════════════════════════════
     // MUESTRAS RETORNABLES

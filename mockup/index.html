@@ -16,7 +16,7 @@
     <button class="tab-btn active" onclick="showScreen('home')">🏠 Inicio</button>
     <button class="tab-btn" onclick="showScreen('entry')">📋 Entrada</button>
     <button class="tab-btn" onclick="showScreen('movements')">🔄 Movimientos</button>
-    <button class="tab-btn" onclick="showScreen('dispatch')">🚚 Despacho</button>
+    <button class="tab-btn" onclick="showScreen('pedidos')">📋 Pedidos</button>
     <button class="tab-btn" onclick="showScreen('muestras')">🏪 Muestras</button>
     <button class="tab-btn" onclick="showScreen('refill')">📦 Rellenar</button>
     <button class="tab-btn" onclick="showScreen('trace')">📜 Trazabilidad</button>
@@ -33,8 +33,11 @@
     <div class="screen active" id="screen-home">
         <div class="top-bar">
             <div class="home-header">
-                <div class="home-hello">Hola, Admin 👋</div>
-                <div class="home-mode">Modo: Foot Safe</div>
+                <div class="home-hello" id="home-hello">Hola, Admin 👋</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                    <div class="home-mode">Modo: Foot Safe</div>
+                    <span class="role-badge supervisor" id="home-role-badge">SUPERVISOR</span>
+                </div>
             </div>
         </div>
         <div class="screen-body animate-in">
@@ -254,6 +257,21 @@
             <h2>Módulos de Movimiento</h2>
         </div>
         <div class="screen-body animate-in">
+            <div class="hub-card" onclick="showScreen('pedidos')" style="border-left:3px solid var(--dispatch);">
+                <div class="hub-header">
+                    <div class="hub-icon green">📋</div>
+                    <div>
+                        <div class="hub-title">Pedidos de Venta</div>
+                        <div class="hub-sub">Crear pedidos · Escanear para cumplir</div>
+                    </div>
+                    <span class="hub-arrow">›</span>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:10px;">
+                    <span class="pedido-status pendiente" style="font-size:0.5rem;">2 PENDIENTES</span>
+                    <span class="pedido-status en-proceso" style="font-size:0.5rem;">1 EN PROCESO</span>
+                </div>
+            </div>
+
             <div class="hub-card">
                 <div class="hub-header">
                     <div class="hub-icon amber">⏸</div>
@@ -268,23 +286,12 @@
                 </div>
             </div>
 
-            <div class="hub-card" onclick="showScreen('dispatch')">
-                <div class="hub-header">
-                    <div class="hub-icon green">🚚</div>
-                    <div>
-                        <div class="hub-title">Despacho</div>
-                        <div class="hub-sub">Seleccionar items en Stand-By para salida</div>
-                    </div>
-                    <span class="hub-arrow">›</span>
-                </div>
-            </div>
-
-            <div class="hub-card">
+            <div class="hub-card" id="hub-calidad">
                 <div class="hub-header">
                     <div class="hub-icon purple">⊖</div>
                     <div>
                         <div class="hub-title">Calidad / Bajas</div>
-                        <div class="hub-sub">Hidrolizado · Segunda · Daño Físico</div>
+                        <div class="hub-sub">Requiere autorización del Supervisor</div>
                     </div>
                 </div>
                 <div class="hub-buttons">
@@ -298,7 +305,7 @@
                     <div class="hub-icon teal">🏪</div>
                     <div>
                         <div class="hub-title">Muestras Retornables</div>
-                        <div class="hub-sub">Uso comercial, retornable al stock</div>
+                        <div class="hub-sub">Requiere autorización del Supervisor</div>
                     </div>
                     <span class="hub-arrow">›</span>
                 </div>
@@ -560,6 +567,7 @@
                         <div class="trace-title">Despacho · FS-2026A-42-001</div>
                         <div class="trace-obs">Despacho completado — 4 unidades</div>
                         <div class="trace-date">25/03/2026 11:45 · DESPACHADO</div>
+                        <div class="user-badge">👤 Carlos Martínez <span class="role-badge supervisor" style="font-size:0.5rem;padding:1px 6px;">SUPERVISOR</span></div>
                     </div>
                     <span class="expand-icon">▾</span>
                 </div>
@@ -576,6 +584,7 @@
                         <div class="trace-title">Pre-despacho · FS-2026A-42-005</div>
                         <div class="trace-obs">Stand-By registrado</div>
                         <div class="trace-date">25/03/2026 09:12 · ZONA_PREDESPACHO</div>
+                        <div class="user-badge">👤 José García <span class="role-badge auxiliar" style="font-size:0.5rem;padding:1px 6px;">AUXILIAR</span></div>
                     </div>
                     <span class="expand-icon">▾</span>
                 </div>
@@ -590,8 +599,9 @@
                     <div class="trace-icon teal-bg">🏪</div>
                     <div>
                         <div class="trace-title">Muestra retornable · FS-2026B-40-003</div>
-                        <div class="trace-obs">Entregado a cliente: Tienda Central</div>
+                        <div class="trace-obs">Autorizado por Supervisor · Cliente: Tienda Central</div>
                         <div class="trace-date">22/03/2026 14:20 · ZONA_CUSTODIA_COMERCIAL</div>
+                        <div class="user-badge">👤 Carlos Martínez <span class="role-badge supervisor" style="font-size:0.5rem;padding:1px 6px;">SUPERVISOR</span></div>
                     </div>
                 </div>
             </div>
@@ -603,6 +613,7 @@
                         <div class="trace-title">Caja rellenada · FS-MB-2026A-42-04</div>
                         <div class="trace-obs">Añadidos 2 par(es). Ahora: 7/8</div>
                         <div class="trace-date">21/03/2026 16:50 · RACK</div>
+                        <div class="user-badge">👤 José García <span class="role-badge auxiliar" style="font-size:0.5rem;padding:1px 6px;">AUXILIAR</span></div>
                     </div>
                 </div>
             </div>
@@ -614,6 +625,7 @@
                         <div class="trace-title">Producción · FS-MB-2026A-42-01</div>
                         <div class="trace-obs">Caja Master completa con 8 unidades</div>
                         <div class="trace-date">20/03/2026 08:30 · RACK</div>
+                        <div class="user-badge">👤 José García <span class="role-badge auxiliar" style="font-size:0.5rem;padding:1px 6px;">AUXILIAR</span></div>
                     </div>
                 </div>
             </div>
@@ -625,6 +637,7 @@
                         <div class="trace-title">Producción · FS-2026A-42-025</div>
                         <div class="trace-obs">Par individual suelto</div>
                         <div class="trace-date">20/03/2026 08:30 · RACK</div>
+                        <div class="user-badge">👤 José García <span class="role-badge auxiliar" style="font-size:0.5rem;padding:1px 6px;">AUXILIAR</span></div>
                     </div>
                 </div>
             </div>
@@ -649,7 +662,7 @@
                     </div>
                     <span class="settings-arrow">›</span>
                 </div>
-                <div class="settings-item">
+                <div class="settings-item" onclick="showScreen('tallas')">
                     <div class="settings-icon blue-s">📐</div>
                     <div>
                         <div class="settings-label">Tabla de Tallas</div>
@@ -657,7 +670,7 @@
                     </div>
                     <span class="settings-arrow">›</span>
                 </div>
-                <div class="settings-item">
+                <div class="settings-item" onclick="showScreen('boxing')">
                     <div class="settings-icon green-s">📦</div>
                     <div>
                         <div class="settings-label">Pares por Caja Master</div>
@@ -677,11 +690,11 @@
                     </div>
                     <span class="settings-arrow">›</span>
                 </div>
-                <div class="settings-item">
+                <div class="settings-item" onclick="showScreen('sync')">
                     <div class="settings-icon blue-s">☁</div>
                     <div>
                         <div class="settings-label">Sincronización</div>
-                        <div class="settings-desc">Google Sheets · Última: hace 5 min</div>
+                        <div class="settings-desc" id="sync-desc">Google Sheets · Última: hace 5 min</div>
                     </div>
                     <span class="settings-arrow">›</span>
                 </div>
@@ -709,7 +722,7 @@
                     <div class="settings-icon red-s">🔒</div>
                     <div>
                         <div class="settings-label">Cerrar Sesión</div>
-                        <div class="settings-desc">admin@punteradigital.com</div>
+                        <div class="settings-desc" id="settings-user-email">supervisor@punteradigital.com</div>
                     </div>
                     <span class="settings-arrow">›</span>
                 </div>
@@ -733,7 +746,7 @@
             <div class="modal-box animate-in">
                 <div class="modal-icon">🔒</div>
                 <div class="modal-title">¿Cerrar Sesión?</div>
-                <div class="modal-desc">Se cerrará la sesión de admin@punteradigital.com</div>
+                <div class="modal-desc" id="logout-modal-desc">Se cerrará la sesión actual</div>
                 <button class="action-btn danger" style="background:rgba(255,59,48,0.15);" onclick="confirmLogout()">
                     🚪 CERRAR SESIÓN
                 </button>
@@ -755,25 +768,25 @@
         </div>
         <div class="screen-body animate-in">
             <div class="catalog-grid">
-                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                <div class="catalog-item" onclick="openEditModel('FS300CMFFPBL','Foot Safe 300 Composite','Foot Safe','36','46','8')">
                     <div class="catalog-status active"></div>
                     <div class="catalog-img"><img src="img/boot_black.png" alt="FS300CMFFPBL" /></div>
                     <div class="catalog-name">FS300CMFFPBL</div>
                     <div class="catalog-sku">Foot Safe 300 Comp</div>
                 </div>
-                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                <div class="catalog-item" onclick="openEditModel('FS302CMN','Foot Safe 302','Foot Safe','38','45','8')">
                     <div class="catalog-status active"></div>
                     <div class="catalog-img"><img src="img/boot_brown.png" alt="FS302CMN" /></div>
                     <div class="catalog-name">FS302CMN</div>
                     <div class="catalog-sku">Foot Safe 302</div>
                 </div>
-                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                <div class="catalog-item" onclick="openEditModel('FS400BK','Foot Safe 400 Black','Foot Safe','39','46','6')">
                     <div class="catalog-status active"></div>
                     <div class="catalog-img"><img src="img/boot_tactical.png" alt="FS400BK" /></div>
                     <div class="catalog-name">FS400BK</div>
                     <div class="catalog-sku">Foot Safe 400 Black</div>
                 </div>
-                <div class="catalog-item" onclick="showScreen('catalog-edit')">
+                <div class="catalog-item" onclick="openEditModel('SF200LT','Safety 200 Lite','Safety','36','44','10')">
                     <div class="catalog-status inactive"></div>
                     <div class="catalog-img"><img src="img/shoe_lite.png" alt="SF200LT" /></div>
                     <div class="catalog-name">SF200LT</div>
@@ -781,7 +794,7 @@
                 </div>
             </div>
 
-            <button class="action-btn primary" style="margin-top:20px;" onclick="showScreen('catalog-edit')">➕ AGREGAR MODELO</button>
+            <button class="action-btn primary" style="margin-top:20px;" onclick="openNewModel()">➕ AGREGAR MODELO</button>
         </div>
     </div>
 
@@ -791,8 +804,8 @@
             <div class="top-bar-flex">
                 <button class="back-btn" onclick="showScreen('catalog')">←</button>
                 <div>
-                    <h2>Editar Modelo</h2>
-                    <span class="sub">FS300CMFFPBL</span>
+                    <h2 id="catalog-edit-title">Editar Modelo</h2>
+                    <span class="sub" id="catalog-edit-sub">FS300CMFFPBL</span>
                 </div>
             </div>
         </div>
@@ -810,15 +823,15 @@
                 <div class="card-title">Información del Modelo</div>
                 <div class="input-group">
                     <label>Código SKU</label>
-                    <input class="input-field" value="FS300CMFFPBL" />
+                    <input class="input-field" id="edit-model-sku" value="FS300CMFFPBL" />
                 </div>
                 <div class="input-group">
                     <label>Nombre Comercial</label>
-                    <input class="input-field" value="Foot Safe 300 Composite" />
+                    <input class="input-field" id="edit-model-name" value="Foot Safe 300 Composite" />
                 </div>
                 <div class="input-group">
                     <label>Origen</label>
-                    <select class="input-field">
+                    <select class="input-field" id="edit-model-origin">
                         <option selected>Foot Safe</option>
                         <option>Safety</option>
                     </select>
@@ -826,16 +839,16 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label>Talla Mín</label>
-                        <input class="input-field" value="36" type="number" />
+                        <input class="input-field" id="edit-model-min" value="36" type="number" />
                     </div>
                     <div class="input-group">
                         <label>Talla Máx</label>
-                        <input class="input-field" value="46" type="number" />
+                        <input class="input-field" id="edit-model-max" value="46" type="number" />
                     </div>
                 </div>
                 <div class="input-group">
                     <label>Pares por Caja Master</label>
-                    <input class="input-field" value="8" type="number" />
+                    <input class="input-field" id="edit-model-ppbox" value="8" type="number" />
                 </div>
             </div>
 
@@ -850,8 +863,8 @@
                 </div>
             </div>
 
-            <button class="action-btn primary">💾 GUARDAR CAMBIOS</button>
-            <button class="action-btn danger">🗑 ELIMINAR MODELO</button>
+            <button class="action-btn primary" id="btn-save-model" onclick="saveModel()">💾 GUARDAR CAMBIOS</button>
+            <button class="action-btn danger" id="btn-delete-model">🗑 ELIMINAR MODELO</button>
             <div style="height:20px"></div>
         </div>
     </div>
@@ -898,8 +911,8 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>Endpoint</label>
-                    <input class="input-field" value="/imprimir" readonly style="opacity: 0.5;" />
+                    <label>Endpoint *</label>
+                    <input class="input-field" id="printer-endpoint" value="/imprimir" placeholder="/imprimir" />
                 </div>
             </div>
 
@@ -1103,6 +1116,246 @@
         </div>
     </div>
 
+    <!-- ═══════════════ TABLA DE TALLAS ═══════════════ -->
+    <div class="screen" id="screen-tallas">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Tabla de Tallas</h2>
+                    <span class="sub" style="color: var(--refill-blue);">Rangos y conversiones</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="card">
+                <div class="card-title">Rangos por Modelo</div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--surface-container-highest);">
+                                <th style="text-align:left;padding:10px 8px;color:var(--primary-container);font-weight:700;">Modelo</th>
+                                <th style="text-align:center;padding:10px 8px;color:var(--on-surface-variant);opacity:0.6;">Mín</th>
+                                <th style="text-align:center;padding:10px 8px;color:var(--on-surface-variant);opacity:0.6;">Máx</th>
+                                <th style="text-align:center;padding:10px 8px;color:var(--on-surface-variant);opacity:0.6;">Tallas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                <td style="padding:10px 8px;font-weight:600;">FS300CMFFFPBL</td>
+                                <td style="padding:10px 8px;text-align:center;">36</td>
+                                <td style="padding:10px 8px;text-align:center;">46</td>
+                                <td style="padding:10px 8px;text-align:center;color:var(--primary-container);">11</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                <td style="padding:10px 8px;font-weight:600;">FS302CMN</td>
+                                <td style="padding:10px 8px;text-align:center;">38</td>
+                                <td style="padding:10px 8px;text-align:center;">45</td>
+                                <td style="padding:10px 8px;text-align:center;color:var(--primary-container);">8</td>
+                            </tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                <td style="padding:10px 8px;font-weight:600;">FS400BK</td>
+                                <td style="padding:10px 8px;text-align:center;">39</td>
+                                <td style="padding:10px 8px;text-align:center;">46</td>
+                                <td style="padding:10px 8px;text-align:center;color:var(--primary-container);">8</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 8px;font-weight:600;">SF200LT</td>
+                                <td style="padding:10px 8px;text-align:center;">36</td>
+                                <td style="padding:10px 8px;text-align:center;">44</td>
+                                <td style="padding:10px 8px;text-align:center;color:var(--primary-container);">9</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Conversiones Internacionales</div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:0.6875rem;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--surface-container-highest);">
+                                <th style="text-align:center;padding:8px 4px;color:var(--primary-container);font-weight:700;">VE/CO</th>
+                                <th style="text-align:center;padding:8px 4px;color:var(--on-surface-variant);opacity:0.6;">US</th>
+                                <th style="text-align:center;padding:8px 4px;color:var(--on-surface-variant);opacity:0.6;">UK</th>
+                                <th style="text-align:center;padding:8px 4px;color:var(--on-surface-variant);opacity:0.6;">EU</th>
+                                <th style="text-align:center;padding:8px 4px;color:var(--on-surface-variant);opacity:0.6;">CM</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">38</td><td style="padding:7px 4px;text-align:center;">5.5</td><td style="padding:7px 4px;text-align:center;">5</td><td style="padding:7px 4px;text-align:center;">38</td><td style="padding:7px 4px;text-align:center;">24</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">39</td><td style="padding:7px 4px;text-align:center;">6.5</td><td style="padding:7px 4px;text-align:center;">6</td><td style="padding:7px 4px;text-align:center;">39</td><td style="padding:7px 4px;text-align:center;">24.5</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">40</td><td style="padding:7px 4px;text-align:center;">7</td><td style="padding:7px 4px;text-align:center;">6.5</td><td style="padding:7px 4px;text-align:center;">40</td><td style="padding:7px 4px;text-align:center;">25</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">41</td><td style="padding:7px 4px;text-align:center;">8</td><td style="padding:7px 4px;text-align:center;">7.5</td><td style="padding:7px 4px;text-align:center;">41</td><td style="padding:7px 4px;text-align:center;">26</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">42</td><td style="padding:7px 4px;text-align:center;">8.5</td><td style="padding:7px 4px;text-align:center;">8</td><td style="padding:7px 4px;text-align:center;">42</td><td style="padding:7px 4px;text-align:center;">26.5</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">43</td><td style="padding:7px 4px;text-align:center;">9.5</td><td style="padding:7px 4px;text-align:center;">9</td><td style="padding:7px 4px;text-align:center;">43</td><td style="padding:7px 4px;text-align:center;">27.5</td></tr>
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);"><td style="padding:7px 4px;text-align:center;font-weight:600;">44</td><td style="padding:7px 4px;text-align:center;">10</td><td style="padding:7px 4px;text-align:center;">9.5</td><td style="padding:7px 4px;text-align:center;">44</td><td style="padding:7px 4px;text-align:center;">28</td></tr>
+                            <tr><td style="padding:7px 4px;text-align:center;font-weight:600;">45</td><td style="padding:7px 4px;text-align:center;">11</td><td style="padding:7px 4px;text-align:center;">10.5</td><td style="padding:7px 4px;text-align:center;">45</td><td style="padding:7px 4px;text-align:center;">29</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PARES POR CAJA MASTER ═══════════════ -->
+    <div class="screen" id="screen-boxing">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Pares por Caja Master</h2>
+                    <span class="sub" style="color: var(--dispatch);">Auto-boxing</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="card">
+                <div class="card-title">Configuración por Modelo</div>
+                <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;margin-bottom:14px;">Define cuántos pares caben en cada caja master por modelo.</div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.8125rem;">FS300CMFFFPBL</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">Foot Safe 300 Composite</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input class="input-field" type="number" value="8" min="1" max="20" style="width:60px;padding:10px;text-align:center;font-size:0.875rem;font-weight:700;" />
+                        <span style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">pares</span>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.8125rem;">FS302CMN</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">Foot Safe 302</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input class="input-field" type="number" value="8" min="1" max="20" style="width:60px;padding:10px;text-align:center;font-size:0.875rem;font-weight:700;" />
+                        <span style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">pares</span>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <div>
+                        <div style="font-weight:600;font-size:0.8125rem;">FS400BK</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">Foot Safe 400 Black</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input class="input-field" type="number" value="6" min="1" max="20" style="width:60px;padding:10px;text-align:center;font-size:0.875rem;font-weight:700;" />
+                        <span style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">pares</span>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;">
+                    <div>
+                        <div style="font-weight:600;font-size:0.8125rem;">SF200LT</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">Safety 200 Lite</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input class="input-field" type="number" value="10" min="1" max="20" style="width:60px;padding:10px;text-align:center;font-size:0.875rem;font-weight:700;" />
+                        <span style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">pares</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Opciones Generales</div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Auto-crear Caja Master</div>
+                        <div class="toggle-sub">Crear automáticamente al alcanzar el límite</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Permitir Cajas Incompletas</div>
+                        <div class="toggle-sub">Crear cajas con menos del máximo</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+            </div>
+
+            <button class="action-btn primary glow-primary" onclick="this.innerHTML='✅ ¡GUARDADO!';this.style.background='var(--dispatch)';setTimeout(()=>{this.innerHTML='💾 GUARDAR CAMBIOS';this.style.background='';},2000)">💾 GUARDAR CAMBIOS</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ SINCRONIZACIÓN ═══════════════ -->
+    <div class="screen" id="screen-sync">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('settings')">←</button>
+                <div>
+                    <h2>Sincronización</h2>
+                    <span class="sub" style="color: var(--refill-blue);">Google Sheets</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <!-- Status Banner -->
+            <div class="printer-status-banner connected" id="sync-status-banner">
+                <div class="printer-status-icon" style="background:rgba(52,199,89,0.15);" id="sync-status-icon">✅</div>
+                <div>
+                    <div class="printer-status-text" style="color:var(--dispatch);" id="sync-status-text">Sincronizado</div>
+                    <div class="printer-status-sub" id="sync-status-sub">Última sincronización: hace 5 min</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Conexión Google Sheets</div>
+                <div class="input-group">
+                    <label>ID de Hoja de Cálculo *</label>
+                    <input class="input-field" id="sync-sheet-id" value="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+                </div>
+                <div class="input-group">
+                    <label>Nombre de la Hoja *</label>
+                    <input class="input-field" id="sync-sheet-name" value="Inventario" />
+                </div>
+                <div class="input-group">
+                    <label>Cuenta de Servicio</label>
+                    <input class="input-field" value="puntera-digital@appspot.gserviceaccount.com" style="font-size:0.6875rem;" />
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Configuración de Sincronización</div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Sincronización Automática</div>
+                        <div class="toggle-sub">Cada 5 minutos cuando hay conexión</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Sync al Registrar Entrada</div>
+                        <div class="toggle-sub">Sincronizar inmediatamente tras cada ingreso</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Sync al Despachar</div>
+                        <div class="toggle-sub">Sincronizar inmediatamente al confirmar salida</div>
+                    </div>
+                    <div class="toggle-switch on"></div>
+                </div>
+                <div class="input-group" style="margin-top:8px;">
+                    <label>Intervalo (minutos)</label>
+                    <input class="input-field" type="number" value="5" min="1" max="60" />
+                </div>
+            </div>
+
+            <button class="action-btn blue" onclick="simulateSync(this)">🔄 SINCRONIZAR AHORA</button>
+            <button class="action-btn primary glow-primary" style="margin-top:8px;" onclick="this.innerHTML='✅ ¡GUARDADO!';this.style.background='var(--dispatch)';setTimeout(()=>{this.innerHTML='💾 GUARDAR CONFIGURACIÓN';this.style.background='';},2000)">💾 GUARDAR CONFIGURACIÓN</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
     <!-- ═══════════════ LOGIN SCREEN ═══════════════ -->
     <div class="screen" id="screen-login">
         <div class="screen-body animate-in" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:730px;padding:40px 30px;">
@@ -1112,26 +1365,279 @@
             <div style="width:100%;margin-top:32px;">
                 <div class="input-group">
                     <label>Correo Electrónico</label>
-                    <input class="input-field" id="login-email" type="email" value="admin@punteradigital.com" />
+                    <input class="input-field" id="login-email" type="email" value="supervisor@punteradigital.com" />
                 </div>
                 <div class="input-group">
                     <label>Contraseña</label>
-                    <input class="input-field" id="login-password" type="password" value="admin123" />
+                    <input class="input-field" id="login-password" type="password" value="super123" />
                 </div>
                 <button class="action-btn primary glow-primary" id="btn-login" onclick="handleLogin()" style="margin-top:8px;">🔓 INICIAR SESIÓN</button>
+                <!-- Quick User Selector -->
+                <div class="quick-users">
+                    <button class="quick-user-btn" onclick="quickLogin('it')">
+                        <div class="quick-user-avatar it-bg">🔧</div>
+                        <div><div class="quick-user-name">Andrés López</div><div class="quick-user-role">IT</div></div>
+                    </button>
+                    <button class="quick-user-btn" onclick="quickLogin('supervisor')">
+                        <div class="quick-user-avatar sup-bg">👷</div>
+                        <div><div class="quick-user-name">Carlos Martínez</div><div class="quick-user-role">Supervisor</div></div>
+                    </button>
+                    <button class="quick-user-btn" onclick="quickLogin('auxiliar')">
+                        <div class="quick-user-avatar aux-bg">📦</div>
+                        <div><div class="quick-user-name">José García</div><div class="quick-user-role">Auxiliar</div></div>
+                    </button>
+                    <button class="quick-user-btn" onclick="quickLogin('gerente')">
+                        <div class="quick-user-avatar ger-bg">📊</div>
+                        <div><div class="quick-user-name">María Rodríguez</div><div class="quick-user-role">Gerente</div></div>
+                    </button>
+                </div>
             </div>
-            <div style="margin-top:auto;padding-top:40px;text-align:center;">
+            <div style="margin-top:auto;padding-top:20px;text-align:center;">
                 <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.3;">Puntera Digital v3.0.0</div>
                 <div style="font-size:0.625rem;color:var(--on-surface-variant);opacity:0.2;margin-top:2px;">Kinetic Architect Engine</div>
             </div>
         </div>
     </div>
 
+    <!-- ═══════════════ PEDIDOS LIST ═══════════════ -->
+    <div class="screen" id="screen-pedidos">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Pedidos de Venta</h2>
+                    <span class="sub" style="color: var(--dispatch);" id="pedidos-count-sub">3 pedidos activos</span>
+                </div>
+                <button class="panic-btn" id="btn-create-pedido" onclick="showScreen('pedido-create')" title="Nuevo Pedido">➕</button>
+            </div>
+        </div>
+        <div class="screen-body animate-in" id="pedidos-list-body">
+            <div class="pedido-card pendiente" onclick="openPedidoDetail(0)">
+                <div class="pedido-header">
+                    <div>
+                        <div class="pedido-id">Pedido #4521</div>
+                        <div class="pedido-client">Distribuidora Norte</div>
+                    </div>
+                    <span class="pedido-status pendiente">PENDIENTE</span>
+                </div>
+                <div class="pedido-lines-summary">
+                    <div class="pedido-line">
+                        <span class="pedido-line-model">FS300CMFFFPBL · T42</span>
+                        <span class="pedido-line-qty">0/5</span>
+                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill pending" style="width:0%"></div></div>
+                    </div>
+                    <div class="pedido-line">
+                        <span class="pedido-line-model">FS300CMFFFPBL · T43</span>
+                        <span class="pedido-line-qty">0/3</span>
+                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill pending" style="width:0%"></div></div>
+                    </div>
+                </div>
+                <div class="pedido-meta">👤 Carlos Martínez · 05/05/2026 10:30</div>
+            </div>
+
+            <div class="pedido-card en-proceso" onclick="openPedidoDetail(1)">
+                <div class="pedido-header">
+                    <div>
+                        <div class="pedido-id">Pedido #4520</div>
+                        <div class="pedido-client">Calzados Express</div>
+                    </div>
+                    <span class="pedido-status en-proceso">EN PROCESO</span>
+                </div>
+                <div class="pedido-lines-summary">
+                    <div class="pedido-line">
+                        <span class="pedido-line-model">FS302CMN · T40</span>
+                        <span class="pedido-line-qty">4/6</span>
+                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill partial" style="width:66%"></div></div>
+                    </div>
+                </div>
+                <div class="pedido-meta">👤 Carlos Martínez · 04/05/2026 14:20</div>
+            </div>
+
+            <div class="pedido-card completo" onclick="openPedidoDetail(2)">
+                <div class="pedido-header">
+                    <div>
+                        <div class="pedido-id">Pedido #4519</div>
+                        <div class="pedido-client">Tienda Central</div>
+                    </div>
+                    <span class="pedido-status completo">COMPLETO</span>
+                </div>
+                <div class="pedido-lines-summary">
+                    <div class="pedido-line">
+                        <span class="pedido-line-model">FS400BK · T44</span>
+                        <span class="pedido-line-qty">2/2</span>
+                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill done" style="width:100%"></div></div>
+                    </div>
+                </div>
+                <div class="pedido-meta">👤 Carlos Martínez · 03/05/2026 09:00</div>
+            </div>
+
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PEDIDO CREATE ═══════════════ -->
+    <div class="screen" id="screen-pedido-create">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('pedidos')">←</button>
+                <div>
+                    <h2>Crear Pedido</h2>
+                    <span class="sub" style="color: var(--dispatch);">Nuevo pedido de venta</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="card">
+                <div class="card-title">Datos del Pedido</div>
+                <div class="input-group">
+                    <label>Nro. Pedido *</label>
+                    <input class="input-field" id="new-pedido-num" placeholder="#4522" value="#4522" />
+                </div>
+                <div class="input-group">
+                    <label>Cliente *</label>
+                    <input class="input-field" id="new-pedido-client" placeholder="Nombre del cliente" />
+                </div>
+                <div class="input-group">
+                    <label>Observaciones</label>
+                    <textarea class="input-field" id="new-pedido-obs" rows="2" placeholder="Ej: Pedido urgente..." style="resize:none;"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Líneas del Pedido</div>
+                <div id="pedido-lines-container">
+                    <div class="line-builder" data-line-idx="0">
+                        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;">
+                            <option>FS300CMFFFPBL</option><option>FS302CMN</option><option>FS400BK</option><option>SF200LT</option>
+                        </select>
+                        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;">
+                            <option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option selected>42</option><option>43</option><option>44</option><option>45</option><option>46</option>
+                        </select>
+                        <input class="input-field" type="number" value="5" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" />
+                        <button class="line-remove-btn" onclick="removePedidoLine(this)">✕</button>
+                    </div>
+                </div>
+                <button class="line-add-btn" onclick="addPedidoLine()">➕ Agregar Línea</button>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-box" id="pedido-create-preview">
+                <div class="preview-title">📋 Resumen del Pedido</div>
+                <div id="pedido-preview-lines" style="font-size:0.8125rem;margin-top:8px;">
+                    <div class="preview-line green">• FS300CMFFFPBL T42 — 5 pares</div>
+                </div>
+                <div style="font-size:0.75rem;font-weight:700;color:var(--primary-container);margin-top:10px;" id="pedido-preview-total">Total: 5 pares</div>
+            </div>
+
+            <button class="action-btn primary glow-primary" onclick="confirmCreatePedido()">✅ CREAR PEDIDO</button>
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PEDIDO DETAIL + SCAN ═══════════════ -->
+    <div class="screen" id="screen-pedido-detail">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('pedidos')">←</button>
+                <div>
+                    <h2 id="pedido-detail-title">Pedido #4521</h2>
+                    <span class="sub" style="color: var(--dispatch);" id="pedido-detail-client">Distribuidora Norte</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in">
+            <!-- Pedido Info Header -->
+            <div class="pedido-detail-header">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="pedido-status pendiente" id="pedido-detail-status">PENDIENTE</span>
+                    <div class="user-badge"><span class="user-icon">👤</span> <span id="pedido-detail-creator">Carlos Martínez</span></div>
+                </div>
+                <div class="pedido-detail-progress">
+                    <div class="pedido-detail-progress-text">
+                        <span class="pedido-detail-progress-label">Progreso General</span>
+                        <span class="pedido-detail-progress-value" id="pedido-detail-progress-text">0/8 pares</span>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill green" id="pedido-detail-progress-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+
+            <!-- Lines Detail -->
+            <div class="section-title" style="margin-top:4px;">Líneas del Pedido</div>
+            <div id="pedido-detail-lines">
+                <div class="pedido-line" style="padding:10px 14px;background:var(--surface-container-high);border-radius:var(--radius-lg);margin-bottom:4px;">
+                    <span class="pedido-line-model">FS300CMFFFPBL · T42</span>
+                    <span class="pedido-line-qty" id="line-qty-0">0/5</span>
+                    <div class="pedido-line-progress" style="width:80px;"><div class="pedido-line-progress-fill pending" id="line-prog-0" style="width:0%"></div></div>
+                </div>
+                <div class="pedido-line" style="padding:10px 14px;background:var(--surface-container-high);border-radius:var(--radius-lg);margin-bottom:4px;">
+                    <span class="pedido-line-model">FS300CMFFFPBL · T43</span>
+                    <span class="pedido-line-qty" id="line-qty-1">0/3</span>
+                    <div class="pedido-line-progress" style="width:80px;"><div class="pedido-line-progress-fill pending" id="line-prog-1" style="width:0%"></div></div>
+                </div>
+            </div>
+
+            <!-- Scan Input -->
+            <div class="section-title" style="margin-top:16px;">📷 Escanear Pares</div>
+            <div class="scan-input-group">
+                <input class="input-field" id="scan-pedido-uuid" placeholder="UUID del par (ej: FS-2026A-42-001)" />
+                <button class="scan-btn primary-scan" onclick="scanForPedido()">📷</button>
+            </div>
+
+            <!-- Scan Result Banner -->
+            <div id="scan-result-area"></div>
+
+            <!-- Scanned Pairs -->
+            <div class="section-title" style="margin-top:12px;" id="scanned-title">Pares Escaneados (0)</div>
+            <div id="scanned-pairs-list"></div>
+
+            <!-- Completion area (hidden until complete) -->
+            <div id="pedido-completion-area" style="display:none;">
+                <div class="completion-banner">
+                    <div class="completion-icon">🎉</div>
+                    <div class="completion-title">¡Pedido Completo!</div>
+                    <div class="completion-sub">Todos los pares han sido escaneados correctamente.</div>
+                </div>
+                <button class="action-btn green" onclick="confirmDelivery()">🚚 CONFIRMAR ENTREGA</button>
+                <button class="action-btn danger" style="background:rgba(255,180,171,0.1);margin-top:8px;" onclick="registerReturn()">↩ REGISTRAR RETORNO</button>
+            </div>
+
+            <div style="height:20px"></div>
+        </div>
+    </div>
+
 </div>
 
 <script>
+// ═══ USER SYSTEM ═══
+const USERS = {
+    'it@punteradigital.com':         { name:'Andrés López',    role:'it',         pass:'it123' },
+    'supervisor@punteradigital.com':  { name:'Carlos Martínez', role:'supervisor',  pass:'super123' },
+    'auxiliar@punteradigital.com':    { name:'José García',     role:'auxiliar',    pass:'aux123' },
+    'gerente@punteradigital.com':     { name:'María Rodríguez', role:'gerente',     pass:'ger123' }
+};
+let currentUser = { name:'Carlos Martínez', role:'supervisor', email:'supervisor@punteradigital.com' };
+
+function applyUserUI() {
+    const h = document.getElementById('home-hello');
+    if (h) h.textContent = 'Hola, ' + currentUser.name + ' 👋';
+    const rb = document.getElementById('home-role-badge');
+    if (rb) { rb.textContent = currentUser.role.toUpperCase(); rb.className = 'role-badge ' + currentUser.role; }
+    // Hide create pedido button for auxiliar/gerente
+    const cpb = document.getElementById('btn-create-pedido');
+    if (cpb) cpb.style.display = (currentUser.role === 'auxiliar' || currentUser.role === 'gerente') ? 'none' : '';
+}
+
+function quickLogin(role) {
+    const entry = Object.entries(USERS).find(([,u]) => u.role === role);
+    if (!entry) return;
+    currentUser = { name: entry[1].name, role: entry[1].role, email: entry[0] };
+    applyUserUI();
+    showScreen('home');
+    showSnackbar('👋 ¡Bienvenido, ' + currentUser.name + '!', 'success');
+}
+
 // ═══ SCREEN NAVIGATION ═══
-const tabMap = { home:0, entry:1, movements:2, dispatch:3, muestras:4, refill:5, trace:6, settings:7 };
+const tabMap = { home:0, entry:1, movements:2, pedidos:3, muestras:4, refill:5, trace:6, settings:7 };
 const bottomMap = { home:0, entry:1, movements:2, trace:3, settings:4 };
 
 function showScreen(name) {
@@ -1495,8 +2001,12 @@ function handleLogin() {
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-password').value;
     if (!email || !pass) { showSnackbar('⚠️ Complete todos los campos', 'warning'); return; }
+    const user = USERS[email];
+    if (!user || user.pass !== pass) { showSnackbar('❌ Credenciales incorrectas', 'error'); return; }
+    currentUser = { name: user.name, role: user.role, email: email };
+    applyUserUI();
     showScreen('home');
-    showSnackbar('👋 ¡Bienvenido de vuelta!', 'success');
+    showSnackbar('👋 ¡Bienvenido, ' + currentUser.name + '!', 'success');
 }
 
 // ═══ IMAGE UPLOAD ═══
@@ -1545,6 +2055,362 @@ function toggleDayGroup(header) {
     const icon = header.querySelector('.expand-icon');
     group.classList.toggle('open');
     if (icon) icon.textContent = group.classList.contains('open') ? '▴' : '▾';
+}
+
+// ═══ CATALOG MODEL MANAGEMENT ═══
+let editingNewModel = false;
+
+function openNewModel() {
+    editingNewModel = true;
+    document.getElementById('catalog-edit-title').textContent = 'Nuevo Modelo';
+    document.getElementById('catalog-edit-sub').textContent = 'Agregar al catálogo';
+    document.getElementById('catalog-edit-sub').style.color = 'var(--dispatch)';
+    document.getElementById('edit-model-sku').value = '';
+    document.getElementById('edit-model-name').value = '';
+    document.getElementById('edit-model-origin').selectedIndex = 0;
+    document.getElementById('edit-model-min').value = '36';
+    document.getElementById('edit-model-max').value = '46';
+    document.getElementById('edit-model-ppbox').value = '8';
+    const img = document.getElementById('catalog-edit-img');
+    if (img) img.src = '';
+    const zone = document.querySelector('.img-upload-zone');
+    if (zone) zone.classList.remove('has-image');
+    document.getElementById('btn-save-model').innerHTML = '✅ CREAR MODELO';
+    document.getElementById('btn-delete-model').style.display = 'none';
+    showScreen('catalog-edit');
+}
+
+function openEditModel(sku, name, origin, min, max, ppbox) {
+    editingNewModel = false;
+    document.getElementById('catalog-edit-title').textContent = 'Editar Modelo';
+    document.getElementById('catalog-edit-sub').textContent = sku;
+    document.getElementById('catalog-edit-sub').style.color = '';
+    document.getElementById('edit-model-sku').value = sku;
+    document.getElementById('edit-model-name').value = name;
+    document.getElementById('edit-model-origin').value = origin;
+    document.getElementById('edit-model-min').value = min;
+    document.getElementById('edit-model-max').value = max;
+    document.getElementById('edit-model-ppbox').value = ppbox;
+    document.getElementById('btn-save-model').innerHTML = '💾 GUARDAR CAMBIOS';
+    document.getElementById('btn-delete-model').style.display = '';
+    showScreen('catalog-edit');
+}
+
+function saveModel() {
+    const sku = document.getElementById('edit-model-sku').value.trim();
+    const name = document.getElementById('edit-model-name').value.trim();
+    if (!sku || !name) { showSnackbar('⚠️ Complete SKU y Nombre', 'warning'); return; }
+    const btn = document.getElementById('btn-save-model');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ ¡GUARDADO!';
+    btn.style.background = 'var(--dispatch)';
+    showSnackbar(editingNewModel ? '✅ Modelo ' + sku + ' creado' : '💾 Modelo ' + sku + ' actualizado', 'success');
+    setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.background = '';
+        showScreen('catalog');
+    }, 1500);
+}
+
+// ═══ PEDIDO DE VENTA SYSTEM ═══
+const pedidos = [
+    { id:'#4521', client:'Distribuidora Norte', status:'pendiente', creator:'Carlos Martínez',
+      date:'05/05/2026 10:30', obs:'Pedido urgente',
+      lines:[{model:'FS300CMFFFPBL',size:'42',qty:5,scanned:0},{model:'FS300CMFFFPBL',size:'43',qty:3,scanned:0}],
+      scannedPairs:[] },
+    { id:'#4520', client:'Calzados Express', status:'en-proceso', creator:'Carlos Martínez',
+      date:'04/05/2026 14:20', obs:'',
+      lines:[{model:'FS302CMN',size:'40',qty:6,scanned:4}],
+      scannedPairs:[
+        {uuid:'FS-2026B-40-001',time:'14:25',user:'José García'},
+        {uuid:'FS-2026B-40-002',time:'14:26',user:'José García'},
+        {uuid:'FS-2026B-40-003',time:'14:28',user:'José García'},
+        {uuid:'FS-2026B-40-004',time:'14:30',user:'José García'}
+      ] },
+    { id:'#4519', client:'Tienda Central', status:'completo', creator:'Carlos Martínez',
+      date:'03/05/2026 09:00', obs:'',
+      lines:[{model:'FS400BK',size:'44',qty:2,scanned:2}],
+      scannedPairs:[
+        {uuid:'FS-2026A-44-001',time:'09:15',user:'José García'},
+        {uuid:'FS-2026A-44-002',time:'09:17',user:'José García'}
+      ] }
+];
+let activePedidoIdx = 0;
+
+function openPedidoDetail(idx) {
+    activePedidoIdx = idx;
+    const p = pedidos[idx];
+    document.getElementById('pedido-detail-title').textContent = 'Pedido ' + p.id;
+    document.getElementById('pedido-detail-client').textContent = p.client;
+    document.getElementById('pedido-detail-creator').textContent = p.creator;
+    // Status
+    const st = document.getElementById('pedido-detail-status');
+    st.textContent = p.status.replace('-',' ').toUpperCase();
+    st.className = 'pedido-status ' + p.status;
+    // Lines
+    const linesEl = document.getElementById('pedido-detail-lines');
+    linesEl.innerHTML = '';
+    p.lines.forEach((ln, i) => {
+        const pct = ln.qty > 0 ? Math.round((ln.scanned/ln.qty)*100) : 0;
+        const cls = ln.scanned >= ln.qty ? 'done' : (ln.scanned > 0 ? 'partial' : 'pending');
+        linesEl.innerHTML += `<div class="pedido-line" style="padding:10px 14px;background:var(--surface-container-high);border-radius:var(--radius-lg);margin-bottom:4px;">
+            <span class="pedido-line-model">${ln.model} · T${ln.size}</span>
+            <span class="pedido-line-qty" id="line-qty-${i}">${ln.scanned}/${ln.qty}</span>
+            <div class="pedido-line-progress" style="width:80px;"><div class="pedido-line-progress-fill ${cls}" id="line-prog-${i}" style="width:${pct}%"></div></div>
+        </div>`;
+    });
+    // Overall progress
+    updatePedidoProgress(p);
+    // Scanned pairs
+    renderScannedPairs(p);
+    // Show/hide scan input and completion
+    const totalQty = p.lines.reduce((s,l)=>s+l.qty,0);
+    const totalSc = p.lines.reduce((s,l)=>s+l.scanned,0);
+    const isComplete = totalSc >= totalQty;
+    document.querySelector('#screen-pedido-detail .scan-input-group').style.display = isComplete ? 'none' : '';
+    document.getElementById('pedido-completion-area').style.display = isComplete ? 'block' : 'none';
+    document.getElementById('scan-result-area').innerHTML = '';
+    document.getElementById('scan-pedido-uuid').value = '';
+    showScreen('pedido-detail');
+}
+
+function updatePedidoProgress(p) {
+    const totalQty = p.lines.reduce((s,l)=>s+l.qty,0);
+    const totalSc = p.lines.reduce((s,l)=>s+l.scanned,0);
+    document.getElementById('pedido-detail-progress-text').textContent = totalSc + '/' + totalQty + ' pares';
+    document.getElementById('pedido-detail-progress-bar').style.width = (totalQty>0?Math.round((totalSc/totalQty)*100):0)+'%';
+}
+
+function renderScannedPairs(p) {
+    const list = document.getElementById('scanned-pairs-list');
+    list.innerHTML = '';
+    document.getElementById('scanned-title').textContent = 'Pares Escaneados (' + p.scannedPairs.length + ')';
+    p.scannedPairs.forEach(sp => {
+        list.innerHTML += `<div class="scanned-pair">
+            <div class="scanned-pair-check">✓</div>
+            <span class="scanned-pair-uuid">${sp.uuid}</span>
+            <div class="scanned-pair-meta">${sp.time}<br>👤 ${sp.user}</div>
+        </div>`;
+    });
+}
+
+// ═══ SCAN VALIDATION ENGINE ═══
+function scanForPedido() {
+    const uuid = document.getElementById('scan-pedido-uuid').value.trim();
+    if (!uuid) { showSnackbar('⚠️ Ingrese un UUID', 'warning'); return; }
+    const p = pedidos[activePedidoIdx];
+    const area = document.getElementById('scan-result-area');
+    // Parse UUID to extract model info — format: PREFIX-LOTE-TALLA-SEQ
+    const parts = uuid.split('-');
+    let scannedModel = '', scannedSize = '';
+    if (parts.length >= 3) {
+        scannedSize = parts[2];
+        // Determine model from UUID prefix pattern
+        if (uuid.startsWith('FS-2026A')) scannedModel = 'FS300CMFFFPBL';
+        else if (uuid.startsWith('FS-2026B')) scannedModel = 'FS302CMN';
+        else if (uuid.startsWith('SF-')) scannedModel = 'SF200LT';
+        else scannedModel = 'FS400BK';
+    }
+    // For demo: also accept direct model-talla format typed manually
+    if (!scannedModel && uuid.includes('T')) {
+        const m = uuid.match(/^(\w+)\s*T(\d+)/i);
+        if (m) { scannedModel = m[1]; scannedSize = m[2]; }
+    }
+    // Find matching line
+    const matchingLine = p.lines.find(l => l.model === scannedModel && l.size === scannedSize);
+    if (!matchingLine) {
+        // Check if model exists but wrong size
+        const modelExists = p.lines.find(l => l.model === scannedModel);
+        if (modelExists) {
+            const expected = p.lines.filter(l=>l.model===scannedModel).map(l=>'T'+l.size).join(', ');
+            area.innerHTML = `<div class="scan-banner error">
+                <div class="scan-banner-icon">❌</div>
+                <div class="scan-banner-text">
+                    <div class="scan-banner-title">Talla ${scannedSize} no coincide</div>
+                    <div class="scan-banner-detail">Se esperaba: ${expected}</div>
+                </div>
+            </div>`;
+        } else {
+            const expected = [...new Set(p.lines.map(l=>l.model))].join(', ');
+            area.innerHTML = `<div class="scan-banner error">
+                <div class="scan-banner-icon">❌</div>
+                <div class="scan-banner-text">
+                    <div class="scan-banner-title">Modelo ${scannedModel||'desconocido'} NO corresponde</div>
+                    <div class="scan-banner-detail">Este pedido requiere: ${expected}</div>
+                </div>
+            </div>`;
+        }
+        showSnackbar('❌ Escaneo rechazado', 'error');
+        return;
+    }
+    // Check quantity
+    if (matchingLine.scanned >= matchingLine.qty) {
+        area.innerHTML = `<div class="scan-banner warning">
+            <div class="scan-banner-icon">⚠️</div>
+            <div class="scan-banner-text">
+                <div class="scan-banner-title">Cantidad completa para T${scannedSize}</div>
+                <div class="scan-banner-detail">Ya se escanearon ${matchingLine.qty}/${matchingLine.qty} pares de ${scannedModel} T${scannedSize}</div>
+            </div>
+        </div>`;
+        showSnackbar('⚠️ Cantidad ya completa', 'warning');
+        return;
+    }
+    // SUCCESS
+    matchingLine.scanned++;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
+    p.scannedPairs.unshift({ uuid: uuid, time: timeStr, user: currentUser.name });
+    if (p.status === 'pendiente') p.status = 'en-proceso';
+    area.innerHTML = `<div class="scan-banner success">
+        <div class="scan-banner-icon">✅</div>
+        <div class="scan-banner-text">
+            <div class="scan-banner-title">¡Correcto! ${scannedModel} T${scannedSize}</div>
+            <div class="scan-banner-detail">${matchingLine.scanned}/${matchingLine.qty} pares · Escaneado por ${currentUser.name}</div>
+        </div>
+    </div>`;
+    showSnackbar('✅ Par registrado correctamente', 'success');
+    // Update UI
+    const li = p.lines.indexOf(matchingLine);
+    const pct = Math.round((matchingLine.scanned/matchingLine.qty)*100);
+    const cls = matchingLine.scanned >= matchingLine.qty ? 'done' : 'partial';
+    const qEl = document.getElementById('line-qty-'+li);
+    const pEl = document.getElementById('line-prog-'+li);
+    if (qEl) qEl.textContent = matchingLine.scanned+'/'+matchingLine.qty;
+    if (pEl) { pEl.style.width = pct+'%'; pEl.className = 'pedido-line-progress-fill '+cls; }
+    updatePedidoProgress(p);
+    renderScannedPairs(p);
+    document.getElementById('scan-pedido-uuid').value = '';
+    // Check if all complete
+    const totalQty = p.lines.reduce((s,l)=>s+l.qty,0);
+    const totalSc = p.lines.reduce((s,l)=>s+l.scanned,0);
+    if (totalSc >= totalQty) {
+        p.status = 'completo';
+        const st = document.getElementById('pedido-detail-status');
+        st.textContent = 'COMPLETO'; st.className = 'pedido-status completo';
+        document.querySelector('#screen-pedido-detail .scan-input-group').style.display = 'none';
+        document.getElementById('pedido-completion-area').style.display = 'block';
+    }
+}
+
+function confirmDelivery() {
+    const p = pedidos[activePedidoIdx];
+    p.status = 'entregado';
+    const st = document.getElementById('pedido-detail-status');
+    st.textContent = 'ENTREGADO'; st.className = 'pedido-status entregado';
+    document.getElementById('pedido-completion-area').innerHTML = `
+        <div class="completion-banner" style="background:rgba(0,150,136,0.06);">
+            <div class="completion-icon">🚚</div>
+            <div class="completion-title" style="color:var(--teal);">Pedido Entregado</div>
+            <div class="completion-sub">Entrega confirmada por ${currentUser.name}</div>
+        </div>`;
+    showSnackbar('🚚 Entrega confirmada por ' + currentUser.name, 'success');
+}
+
+function registerReturn() {
+    const p = pedidos[activePedidoIdx];
+    p.status = 'retornado';
+    const st = document.getElementById('pedido-detail-status');
+    st.textContent = 'RETORNADO'; st.className = 'pedido-status retornado';
+    document.getElementById('pedido-completion-area').innerHTML = `
+        <div class="completion-banner" style="background:rgba(255,59,48,0.06);">
+            <div class="completion-icon">↩</div>
+            <div class="completion-title" style="color:var(--error);">Pedido Retornado</div>
+            <div class="completion-sub">Retorno registrado por ${currentUser.name}</div>
+        </div>`;
+    showSnackbar('↩ Retorno registrado por ' + currentUser.name, 'warning');
+}
+
+// ═══ PEDIDO CREATE ═══
+let lineCount = 1;
+function addPedidoLine() {
+    const c = document.getElementById('pedido-lines-container');
+    const d = document.createElement('div');
+    d.className = 'line-builder';
+    d.innerHTML = `<select class="input-field" style="padding:10px 8px;font-size:0.75rem;">
+        <option>FS300CMFFFPBL</option><option>FS302CMN</option><option>FS400BK</option><option>SF200LT</option>
+    </select>
+    <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;">
+        <option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option selected>42</option><option>43</option><option>44</option><option>45</option><option>46</option>
+    </select>
+    <input class="input-field" type="number" value="1" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" />
+    <button class="line-remove-btn" onclick="removePedidoLine(this)">✕</button>`;
+    c.appendChild(d);
+    lineCount++;
+    updatePedidoPreview();
+}
+
+function removePedidoLine(btn) {
+    const c = document.getElementById('pedido-lines-container');
+    if (c.children.length <= 1) { showSnackbar('⚠️ Debe haber al menos una línea', 'warning'); return; }
+    btn.closest('.line-builder').remove();
+    updatePedidoPreview();
+}
+
+function updatePedidoPreview() {
+    const lines = document.querySelectorAll('#pedido-lines-container .line-builder');
+    const prev = document.getElementById('pedido-preview-lines');
+    let total = 0; prev.innerHTML = '';
+    lines.forEach(l => {
+        const model = l.querySelectorAll('select')[0].value;
+        const size = l.querySelectorAll('select')[1].value;
+        const qty = parseInt(l.querySelector('input[type=number]').value) || 0;
+        total += qty;
+        prev.innerHTML += `<div class="preview-line green">• ${model} T${size} — ${qty} pares</div>`;
+    });
+    document.getElementById('pedido-preview-total').textContent = 'Total: ' + total + ' pares';
+}
+
+function confirmCreatePedido() {
+    const num = document.getElementById('new-pedido-num').value.trim();
+    const client = document.getElementById('new-pedido-client').value.trim();
+    if (!num || !client) { showSnackbar('⚠️ Complete Nro. Pedido y Cliente', 'warning'); return; }
+    const lines = [];
+    document.querySelectorAll('#pedido-lines-container .line-builder').forEach(l => {
+        lines.push({
+            model: l.querySelectorAll('select')[0].value,
+            size: l.querySelectorAll('select')[1].value,
+            qty: parseInt(l.querySelector('input[type=number]').value) || 0,
+            scanned: 0
+        });
+    });
+    const now = new Date();
+    pedidos.unshift({
+        id: num, client: client, status: 'pendiente', creator: currentUser.name,
+        date: now.toLocaleDateString('es-VE') + ' ' + now.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'}),
+        obs: document.getElementById('new-pedido-obs').value,
+        lines: lines, scannedPairs: []
+    });
+    showScreen('pedidos');
+    showSnackbar('✅ Pedido ' + num + ' creado por ' + currentUser.name, 'success');
+    // Refresh list would happen here in production; for mockup we just go back
+}
+
+// ═══ SYNC SIMULATION ═══
+function simulateSync(btn) {
+    const origText = btn.innerHTML;
+    btn.innerHTML = '⏳ Sincronizando...';
+    btn.style.opacity = '0.6';
+    btn.disabled = true;
+    const icon = document.getElementById('sync-status-icon');
+    const text = document.getElementById('sync-status-text');
+    const sub = document.getElementById('sync-status-sub');
+    if (icon) icon.textContent = '🔄';
+    if (text) { text.textContent = 'Sincronizando...'; text.style.color = 'var(--amber)'; }
+    if (sub) sub.textContent = 'Enviando datos al servidor...';
+    setTimeout(() => {
+        btn.innerHTML = '✅ ¡Sincronizado!';
+        btn.style.opacity = '1';
+        btn.style.background = 'var(--dispatch)';
+        if (icon) icon.textContent = '✅';
+        if (text) { text.textContent = 'Sincronizado'; text.style.color = 'var(--dispatch)'; }
+        if (sub) sub.textContent = 'Última sincronización: ahora mismo';
+        showSnackbar('✅ Sincronización completada · ' + currentUser.name, 'success');
+        setTimeout(() => {
+            btn.innerHTML = origText;
+            btn.style.background = '';
+            btn.disabled = false;
+        }, 2000);
+    }, 2500);
 }
 </script>
 

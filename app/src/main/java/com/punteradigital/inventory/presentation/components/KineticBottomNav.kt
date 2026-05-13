@@ -1,12 +1,12 @@
 package com.punteradigital.inventory.presentation.components
 
 import android.content.res.Configuration
+import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -167,48 +166,47 @@ fun KineticBottomNavBar(
             items.forEachIndexed { index, item ->
                 val isSelected = selectedIndex == index
 
-                // Animated values
-                val scale by animateFloatAsState(
-                    targetValue = if (isSelected) {
-                        if (isLandscape) 1.08f else 1.15f
-                    } else {
-                        if (isLandscape) 0.95f else 0.9f
-                    },
-                    animationSpec = spring(
+                // Consolidate all per-tab animations into a single Transition.
+                // Previously 5 separate animateXxxAsState calls = 5 independent snapshot
+                // subscriptions per tab = 25 total. Now: 1 Transition per tab = 5 total.
+                val transition = updateTransition(targetState = isSelected, label = "tab_$index")
+
+                val scale by transition.animateFloat(
+                    transitionSpec = { spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
-                    ),
+                    ) },
                     label = "scale_$index"
-                )
+                ) { selected ->
+                    if (selected) { if (isLandscape) 1.08f else 1.15f }
+                    else { if (isLandscape) 0.95f else 0.9f }
+                }
 
-                val iconAlpha by animateFloatAsState(
-                    targetValue = if (isSelected) 1f else 0.45f,
-                    animationSpec = tween(250),
+                val iconAlpha by transition.animateFloat(
+                    transitionSpec = { tween(250) },
                     label = "alpha_$index"
-                )
+                ) { selected -> if (selected) 1f else 0.45f }
 
-                val labelAlpha by animateFloatAsState(
-                    targetValue = if (isSelected) 1f else 0f,
-                    animationSpec = tween(200),
+                val labelAlpha by transition.animateFloat(
+                    transitionSpec = { tween(200) },
                     label = "labelAlpha_$index"
-                )
+                ) { selected -> if (selected) 1f else 0f }
 
-                val iconColor by animateColorAsState(
-                    targetValue = if (isSelected) primaryColor else inactiveIconColor,
-                    animationSpec = tween(300),
+                val iconColor by transition.animateColor(
+                    transitionSpec = { tween(300) },
                     label = "color_$index"
-                )
+                ) { selected -> if (selected) primaryColor else inactiveIconColor }
 
-                val verticalOffset by animateFloatAsState(
-                    targetValue = if (isSelected) {
-                        if (isLandscape) -3f else -6f
-                    } else 0f,
-                    animationSpec = spring(
+                val verticalOffset by transition.animateFloat(
+                    transitionSpec = { spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
-                    ),
+                    ) },
                     label = "offset_$index"
-                )
+                ) { selected ->
+                    if (selected) { if (isLandscape) -3f else -6f }
+                    else 0f
+                }
 
                 Box(
                     modifier = Modifier

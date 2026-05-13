@@ -150,25 +150,15 @@ fun PunteraDigitalTheme(
         else                                      -> SafetyLightColorScheme
     }
 
-    // Animate each color property for smooth transition
+    // Only animate the 4 most visually impactful colors during FS↔Safety transitions.
+    // Previously we animated all 17 properties, which caused cascading recompositions
+    // across the entire UI tree on every frame — even when the theme was NOT changing.
+    val animSpec = tween<Color>(300)
     val animatedScheme = targetScheme.copy(
-        primary = animateColorAsState(targetScheme.primary, tween(300), label = "primary").value,
-        onPrimary = animateColorAsState(targetScheme.onPrimary, tween(300), label = "onPrimary").value,
-        background = animateColorAsState(targetScheme.background, tween(300), label = "background").value,
-        onBackground = animateColorAsState(targetScheme.onBackground, tween(300), label = "onBackground").value,
-        surface = animateColorAsState(targetScheme.surface, tween(300), label = "surface").value,
-        onSurface = animateColorAsState(targetScheme.onSurface, tween(300), label = "onSurface").value,
-        surfaceVariant = animateColorAsState(targetScheme.surfaceVariant, tween(300), label = "surfaceVariant").value,
-        onSurfaceVariant = animateColorAsState(targetScheme.onSurfaceVariant, tween(300), label = "onSurfaceVariant").value,
-        primaryContainer = animateColorAsState(targetScheme.primaryContainer, tween(300), label = "primaryContainer").value,
-        outline = animateColorAsState(targetScheme.outline, tween(300), label = "outline").value,
-        error = animateColorAsState(targetScheme.error, tween(300), label = "error").value,
-        onError = animateColorAsState(targetScheme.onError, tween(300), label = "onError").value,
-        surfaceContainer = animateColorAsState(targetScheme.surfaceContainer, tween(300), label = "surfaceContainer").value,
-        surfaceContainerHigh = animateColorAsState(targetScheme.surfaceContainerHigh, tween(300), label = "surfaceContainerHigh").value,
-        surfaceContainerHighest = animateColorAsState(targetScheme.surfaceContainerHighest, tween(300), label = "surfaceContainerHighest").value,
-        surfaceContainerLow = animateColorAsState(targetScheme.surfaceContainerLow, tween(300), label = "surfaceContainerLow").value,
-        surfaceContainerLowest = animateColorAsState(targetScheme.surfaceContainerLowest, tween(300), label = "surfaceContainerLowest").value,
+        primary = animateColorAsState(targetScheme.primary, animSpec, label = "primary").value,
+        background = animateColorAsState(targetScheme.background, animSpec, label = "background").value,
+        surface = animateColorAsState(targetScheme.surface, animSpec, label = "surface").value,
+        surfaceVariant = animateColorAsState(targetScheme.surfaceVariant, animSpec, label = "surfaceVariant").value
     )
 
     MaterialTheme(

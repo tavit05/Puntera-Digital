@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +41,7 @@ fun HomeScreen(
     val user by viewModel.currentUser.collectAsState()
     val origin by viewModel.currentOrigin.collectAsState()
     val batchStatus by viewModel.inventoryStatus.collectAsState(initial = emptyList())
-    val movements by viewModel.traceabilityMovements.collectAsState(initial = emptyList())
+    val movements by viewModel.recentMovements.collectAsState(initial = emptyList())
     val totalAvailable by viewModel.totalAvailable.collectAsState(initial = 0)
     val totalStandBy by viewModel.totalStandBy.collectAsState(initial = 0)
     val totalMasterBoxes by viewModel.totalMasterBoxes.collectAsState(initial = 0)
@@ -165,7 +166,8 @@ fun HomeScreen(
                     EmojiCounterCard("📦", "Stock", "$totalAvailable", DispatchGreen, Modifier.weight(1f))
                     EmojiCounterCard("⏸", "Stand-By", "$totalStandBy", StandByAmber, Modifier.weight(1f))
                     EmojiCounterCard("📦", "Cajas Master", "$totalMasterBoxes", QualityPurple, Modifier.weight(1f))
-                    EmojiCounterCard("🏷", "Modelos", "${batchStatus.map { it.model }.distinct().size}", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                    val distinctModelCount = remember(batchStatus) { batchStatus.map { it.model }.distinct().size }
+                    EmojiCounterCard("🏷", "Modelos", "$distinctModelCount", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                 }
             }
         } else {
@@ -185,7 +187,8 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     EmojiCounterCard("📦", "Cajas Master", "$totalMasterBoxes", QualityPurple, Modifier.weight(1f))
-                    EmojiCounterCard("🏷", "Modelos", "${batchStatus.map { it.model }.distinct().size}", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
+                    val distinctModelCount = remember(batchStatus) { batchStatus.map { it.model }.distinct().size }
+                    EmojiCounterCard("🏷", "Modelos", "$distinctModelCount", MaterialTheme.colorScheme.primary, Modifier.weight(1f))
                 }
             }
         }

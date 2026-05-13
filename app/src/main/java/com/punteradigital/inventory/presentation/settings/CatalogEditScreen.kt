@@ -42,6 +42,9 @@ fun CatalogEditScreen(
 
     var sku by remember { mutableStateOf(item?.name ?: "") }
     var nombreComercial by remember { mutableStateOf(item?.sku ?: "") }
+    var tallaMin by remember { mutableStateOf("36") }
+    var tallaMax by remember { mutableStateOf("46") }
+    var paresPorCaja by remember { mutableStateOf("8") }
     var isActive by remember { mutableStateOf(item?.isActive ?: true) }
 
     // Image state
@@ -194,15 +197,15 @@ fun CatalogEditScreen(
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     KineticTextField(
-                        value = "36",
-                        onValueChange = { },
+                        value = tallaMin,
+                        onValueChange = { tallaMin = it },
                         label = "Talla Mín",
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
                     KineticTextField(
-                        value = "46",
-                        onValueChange = { },
+                        value = tallaMax,
+                        onValueChange = { tallaMax = it },
                         label = "Talla Máx",
                         modifier = Modifier.weight(1f),
                         singleLine = true
@@ -212,8 +215,8 @@ fun CatalogEditScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 KineticTextField(
-                    value = "8",
-                    onValueChange = { },
+                    value = paresPorCaja,
+                    onValueChange = { paresPorCaja = it },
                     label = "Pares por Caja Master",
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true

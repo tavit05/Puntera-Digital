@@ -61,7 +61,6 @@ fun UnifiedScannerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val user by viewModel.currentUser.collectAsState()
     val origin by viewModel.currentOrigin.collectAsState()
-    val dispatchBatch by viewModel.dispatchBatch.collectAsState()
 
     var hasCameraPermission by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }

@@ -97,10 +97,13 @@ fun TraceabilityScreen(viewModel: InventoryViewModel) {
             }
         }
 
-        // ═══ PAGER CONTENT ═══
+        // beyondViewportPageCount = 0 ensures only the visible tab is composed.
+        // Without this, all 3 tabs compose simultaneously, wasting resources on
+        // heavy Flow collections and chart rendering for off-screen content.
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            beyondViewportPageCount = 0
         ) { page ->
             when (page) {
                 0 -> ResumenTab(viewModel)

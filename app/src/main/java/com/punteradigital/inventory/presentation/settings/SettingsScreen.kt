@@ -33,6 +33,9 @@ fun SettingsScreen(
     onNavigateToQRHistory: () -> Unit = {},
     onNavigateToRackMap: () -> Unit = {},
     onNavigateToUsers: () -> Unit = {},
+    onNavigateToSizeTable: () -> Unit = {},
+    onNavigateToBoxing: () -> Unit = {},
+    onNavigateToSync: () -> Unit = {},
     onLogout: () -> Unit = {},
     themePreferences: ThemePreferences? = null,
     currentUser: UserEntity? = null
@@ -71,6 +74,9 @@ fun SettingsScreen(
                 onNavigateToQRHistory = onNavigateToQRHistory,
                 onNavigateToRackMap = onNavigateToRackMap,
                 onNavigateToUsers = onNavigateToUsers,
+                onNavigateToSizeTable = onNavigateToSizeTable,
+                onNavigateToBoxing = onNavigateToBoxing,
+                onNavigateToSync = onNavigateToSync,
                 onLogout = onLogout,
                 themePreferences = themePreferences,
                 currentUser = currentUser
@@ -105,6 +111,9 @@ fun SettingsScreen(
                 onNavigateToQRHistory = onNavigateToQRHistory,
                 onNavigateToRackMap = onNavigateToRackMap,
                 onNavigateToUsers = onNavigateToUsers,
+                onNavigateToSizeTable = onNavigateToSizeTable,
+                onNavigateToBoxing = onNavigateToBoxing,
+                onNavigateToSync = onNavigateToSync,
                 onLogout = onLogout,
                 themePreferences = themePreferences,
                 currentUser = currentUser
@@ -121,6 +130,9 @@ fun SettingsContent(
     onNavigateToQRHistory: () -> Unit,
     onNavigateToRackMap: () -> Unit,
     onNavigateToUsers: () -> Unit = {},
+    onNavigateToSizeTable: () -> Unit = {},
+    onNavigateToBoxing: () -> Unit = {},
+    onNavigateToSync: () -> Unit = {},
     onLogout: () -> Unit,
     themePreferences: ThemePreferences? = null,
     currentUser: UserEntity? = null
@@ -161,13 +173,15 @@ fun SettingsContent(
                     icon = Icons.Default.Straighten,
                     iconColor = RefillBlue,
                     label = "Tabla de Tallas",
-                    desc = "Rangos por modelo y conversiones"
+                    desc = "Rangos por modelo y conversiones",
+                    onClick = onNavigateToSizeTable
                 )
                 SettingsItem(
                     icon = Icons.Default.Inventory,
                     iconColor = DispatchGreen,
                     label = "Pares por Caja Master",
-                    desc = "Configuración de auto-boxing"
+                    desc = "Configuración de auto-boxing",
+                    onClick = onNavigateToBoxing
                 )
             }
         }
@@ -200,7 +214,8 @@ fun SettingsContent(
                     icon = Icons.Default.CloudSync,
                     iconColor = RefillBlue,
                     label = "Sincronización",
-                    desc = "Google Sheets · Última: hace 5 min"
+                    desc = "Google Sheets · Última: hace 5 min",
+                    onClick = onNavigateToSync
                 )
             }
         }

@@ -28,9 +28,6 @@ interface InventoryDao {
     @Query("UPDATE products SET status = :status, location = :location, updatedAt = :timestamp WHERE parentUuid = :parentUuid AND status = 'AVAILABLE'")
     suspend fun updateChildrenStatus(parentUuid: String, status: String, location: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM products WHERE status = 'AVAILABLE'")
-    fun getAvailableProducts(): Flow<List<ProductEntity>>
-
     @Query("SELECT COUNT(*) FROM products WHERE status = 'AVAILABLE'")
     fun getTotalAvailableCount(): Flow<Int>
 
@@ -48,13 +45,7 @@ interface InventoryDao {
     """)
     fun getInventoryStatusByBatch(): Flow<List<BatchStatus>>
 
-    @Query("""
-        SELECT lot as batch, model, size, COUNT(*) as count
-        FROM products
-        WHERE status = :status
-        GROUP BY lot, model, size
-    """)
-    fun getStatusGrouped(status: String): Flow<List<BatchStatus>>
+    // getStatusGrouped was removed — unused dead code
 
     // ═══════════════════════════════════════════════════════════════
     // MASTER BOXES
@@ -92,6 +83,11 @@ interface InventoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMovement(movement: MovementEntity)
 
+    /** Recent movements for HomeScreen — avoids loading entire table */
+    @Query("SELECT * FROM movements ORDER BY timestamp DESC LIMIT :limit")
+    fun getRecentMovements(limit: Int = 20): Flow<List<MovementEntity>>
+
+    /** Full movement history — only for Traceability tab */
     @Query("SELECT * FROM movements ORDER BY timestamp DESC")
     fun getAllMovements(): Flow<List<MovementEntity>>
 
