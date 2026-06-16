@@ -1,8 +1,13 @@
 package com.punteradigital.inventory.presentation.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -15,11 +20,44 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.punteradigital.inventory.ui.theme.*
+
+// -----------------------------------------------------
+// KINETIC CLICK - Spring-based scale & ripple feedback
+// -----------------------------------------------------
+@Composable
+fun Modifier.kineticClick(
+    enabled: Boolean = true,
+    scaleOnPress: Float = 0.96f,
+    onClick: () -> Unit
+): Modifier {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed && enabled) scaleOnPress else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "kineticClickScale"
+    )
+    return this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .clickable(
+            interactionSource = interactionSource,
+            indication = LocalIndication.current,
+            enabled = enabled,
+            onClick = onClick
+        )
+}
 
 // -----------------------------------------------------
 // KINETIC CARD - Glassmorphism Base Container
@@ -37,7 +75,7 @@ fun KineticCard(
         .background(MaterialTheme.colorScheme.surfaceVariant) // --surface-container-high
 
     val finalModifier = if (onClick != null) {
-        baseModifier.clickable(onClick = onClick)
+        baseModifier.kineticClick(onClick = onClick)
     } else {
         baseModifier
     }
@@ -129,7 +167,7 @@ fun KineticButton(
             .then(shadowModifier)
             .clip(RoundedCornerShape(8.dp)) // --radius-md
             .background(backgroundBrush)
-            .clickable(enabled = enabled, onClick = onClick)
+            .kineticClick(enabled = enabled, onClick = onClick)
             .padding(vertical = 18.dp, horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {

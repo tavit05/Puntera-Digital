@@ -268,6 +268,10 @@ fun DispatchListScreen(
 
             // Success / Error overlays
             if (uiState is InventoryUiState.SuccessMovement) {
+                LaunchedEffect(uiState) {
+                    kotlinx.coroutines.delay(3000)
+                    viewModel.resetUiState()
+                }
                 val state = uiState as InventoryUiState.SuccessMovement
                 Snackbar(
                     modifier = Modifier

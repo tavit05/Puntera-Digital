@@ -16,7 +16,6 @@
     <button class="tab-btn active" onclick="showScreen('home')">🏠 Inicio</button>
     <button class="tab-btn" onclick="showScreen('entry')">📋 Entrada</button>
     <button class="tab-btn" onclick="showScreen('movements')">🔄 Movimientos</button>
-    <button class="tab-btn" onclick="showScreen('pedidos')">📋 Pedidos</button>
     <button class="tab-btn" onclick="showScreen('muestras')">🏪 Muestras</button>
     <button class="tab-btn" onclick="showScreen('refill')">📦 Rellenar</button>
     <button class="tab-btn" onclick="showScreen('trace')">📜 Trazabilidad</button>
@@ -148,7 +147,7 @@
             <h2>Registro de Nacimiento</h2>
         </div>
         <div class="screen-body animate-in">
-            <div class="card">
+            <div class="card" id="entry-origin-card">
                 <div class="card-title">Origen de Mercancía</div>
                 <div class="origin-row">
                     <div class="origin-chip fs">✓ Foot Safe</div>
@@ -156,33 +155,33 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="entry-product-card">
                 <div class="card-title">Datos del Producto</div>
                 <div class="input-group">
                     <label>Tipo de Entrada</label>
-                    <select class="input-field"><option>Producción</option><option>Ajuste</option><option>Traslado</option></select>
+                    <select class="input-field" id="entry-type" onchange="updateEntryPreview()"><option>Producción</option><option>Ajuste</option><option>Traslado</option></select>
                 </div>
                 <div class="input-group">
                     <label>Modelo</label>
-                    <select class="input-field"><option>FS300CMFFPBL</option><option>FS302CMN</option><option>FS400BK</option></select>
+                    <select class="input-field" id="entry-model" onchange="updateEntryModelSizes()"></select>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
                         <label>Talla</label>
-                        <select class="input-field"><option>42</option><option>43</option><option>44</option></select>
+                        <select class="input-field" id="entry-size" onchange="updateEntryPreview()"></select>
                     </div>
                     <div class="input-group">
                         <label>Lote</label>
-                        <input class="input-field" value="2026A" />
+                        <input class="input-field" id="entry-lote" value="2026A" oninput="updateEntryPreview()" />
                     </div>
                 </div>
                 <div class="input-group">
                     <label>🔢 Cantidad Total a Ingresar *</label>
-                    <input class="input-field" value="25" type="number" />
+                    <input class="input-field" id="entry-qty" value="25" type="number" oninput="updateEntryPreview()" />
                 </div>
                 <div class="input-group">
                     <label>📍 Ubicación Rack *</label>
-                    <select class="input-field" id="entry-rack">
+                    <select class="input-field" id="entry-rack" onchange="updateEntryPreview()">
                         <option value="R-A01">R-A01 — Pasillo A, Nivel 1</option>
                         <option value="R-A02">R-A02 — Pasillo A, Nivel 2</option>
                         <option value="R-A03">R-A03 — Pasillo A, Nivel 3</option>
@@ -195,31 +194,31 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="entry-master-card">
                 <div class="toggle-row">
                     <div>
                         <div class="toggle-label">Caja Master</div>
-                        <div class="toggle-sub">3 cajas × 8 pares</div>
+                        <div class="toggle-sub" id="entry-toggle-sub">3 cajas × 8 pares</div>
                     </div>
-                    <div class="toggle-switch on"></div>
+                    <div class="toggle-switch on" id="entry-master-toggle"></div>
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="entry-ppbox-group">
                     <label>Pares por Caja</label>
-                    <input class="input-field" value="8" type="number" />
+                    <input class="input-field" id="entry-ppbox" value="8" type="number" oninput="updateEntryPreview()" />
                 </div>
 
-                <div class="preview-box">
+                <div class="preview-box" id="entry-preview-box">
                     <div class="preview-title">📦 Resumen de Ingreso</div>
                     <div style="font-size:0.75rem;color:var(--on-surface-variant);margin-bottom:6px;opacity:0.6;">Su ingreso resultará en:</div>
-                    <div class="preview-line green">✅ 3 Cajas Master completas (24 pares)</div>
-                    <div class="preview-line orange">+ 1 par adicional</div>
+                    <div class="preview-line green" id="entry-preview-master">✅ 3 Cajas Master completas (24 pares)</div>
+                    <div class="preview-line orange" id="entry-preview-extra">+ 1 par adicional</div>
 
                     <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:14px;font-weight:600;opacity:0.7;">¿Qué hacer con los pares sobrantes?</div>
-                    <div class="remainder-chips">
-                        <div class="rem-chip active-loose">✓ Pares sueltos</div>
-                        <div class="rem-chip inactive">Caja incompleta</div>
+                    <div class="remainder-chips" id="entry-remainder-chips">
+                        <div class="rem-chip active-loose" id="entry-rem-loose" onclick="setRemainderMode('loose')">✓ Pares sueltos</div>
+                        <div class="rem-chip inactive" id="entry-rem-incomplete" onclick="setRemainderMode('incomplete')">Caja incompleta</div>
                     </div>
-                    <div class="rem-desc">Se generarán etiquetas individuales sin caja padre.</div>
+                    <div class="rem-desc" id="entry-rem-desc">Se generarán etiquetas individuales sin caja padre.</div>
                 </div>
             </div>
 
@@ -251,65 +250,411 @@
         </div>
     </div>
 
+    <!-- ═══════════════ EMPAQUE ═══════════════ -->
+    <div class="screen" id="screen-empaque">
+        <div class="top-bar">
+            <h2>Impresión de Etiquetas</h2>
+            <span class="sub" style="color: var(--primary-container);">Área de Empaque — BarTender Connect</span>
+        </div>
+        <div class="screen-body animate-in">
+            <div class="card">
+                <div class="card-title">Origen de Mercancía</div>
+                <div class="origin-row">
+                    <div class="origin-chip fs" id="empaque-chip-fs" style="cursor:pointer;">✓ Foot Safe</div>
+                    <div class="origin-chip sf" id="empaque-chip-sf" style="cursor:pointer;">Safety</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Datos del Calzado</div>
+                <div class="input-group">
+                    <label>Modelo</label>
+                    <select class="input-field" id="empaque-model" onchange="updateEmpaqueModelSizes()"></select>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Talla</label>
+                        <select class="input-field" id="empaque-size" onchange="updateEmpaquePreview()"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Lote</label>
+                        <input class="input-field" id="empaque-lote" value="2026A" oninput="updateEmpaquePreview()" />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>🔢 Cantidad Total a Imprimir *</label>
+                    <input class="input-field" id="empaque-qty" value="24" type="number" oninput="updateEmpaquePreview()" />
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="toggle-row">
+                    <div>
+                        <div class="toggle-label">Caja Master</div>
+                        <div class="toggle-sub" id="empaque-toggle-sub">3 cajas × 8 pares</div>
+                    </div>
+                    <div class="toggle-switch on" id="empaque-master-toggle"></div>
+                </div>
+                <div class="input-group" id="empaque-ppbox-group">
+                    <label>Pares por Caja</label>
+                    <input class="input-field" id="empaque-ppbox" value="8" type="number" oninput="updateEmpaquePreview()" />
+                </div>
+
+                <div class="preview-box" id="empaque-preview-box">
+                    <div class="preview-title">🖨 Resumen de Impresión</div>
+                    <div style="font-size:0.75rem;color:var(--on-surface-variant);margin-bottom:6px;opacity:0.6;">Se enviará a imprimir:</div>
+                    <div class="preview-line green" id="empaque-preview-master">✅ 3 Cajas Master completas (24 pares)</div>
+                    <div class="preview-line orange" id="empaque-preview-extra" style="display:none;">+ 1 par adicional</div>
+
+                    <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:14px;font-weight:600;opacity:0.7;">¿Qué hacer con los pares sobrantes?</div>
+                    <div class="remainder-chips" id="empaque-remainder-chips">
+                        <div class="rem-chip active-loose" id="empaque-rem-loose" onclick="setEmpaqueRemainderMode('loose')">✓ Pares sueltos</div>
+                        <div class="rem-chip inactive" id="empaque-rem-incomplete" onclick="setEmpaqueRemainderMode('incomplete')">Caja incompleta</div>
+                    </div>
+                    <div class="rem-desc" id="empaque-rem-desc">Se generarán etiquetas individuales sin caja padre.</div>
+                </div>
+            </div>
+
+            <button class="action-btn primary glow-primary" id="btn-empaque-print" onclick="handleEmpaquePrint()">🖨 GENERAR E IMPRIMIR ETIQUETAS</button>
+
+            <!-- Success Banner (persistent) -->
+            <div class="entry-success-banner" id="empaque-success-banner" style="display:none;">
+                <div class="success-banner-icon">✅</div>
+                <div class="success-banner-title">Etiquetas Generadas</div>
+                <div class="success-banner-detail" id="empaque-success-detail"></div>
+                <button class="action-btn primary" onclick="dismissEmpaqueSuccess()" style="margin-top:12px;">🖨 NUEVO LOTE A IMPRIMIR</button>
+            </div>
+
+            <div style="height:40px"></div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="showScreen('empaque')"><span class="icon">🖨</span><span class="label">Empaque</span></button>
+            <button class="nav-item" onclick="showScreen('qr-history')"><span class="icon">📜</span><span class="label">Historial</span></button>
+            <button class="nav-item" onclick="showScreen('printer-config')"><span class="icon">⚙</span><span class="label">Impresora</span></button>
+            <button class="nav-item" onclick="document.getElementById('modal-logout').classList.add('show')"><span class="icon">🔓</span><span class="label">Salir</span></button>
+        </div>
+
+        <!-- Empaque Confirmation Modal -->
+        <div class="modal-overlay" id="modal-empaque-confirm">
+            <div class="modal-box animate-in">
+                <div class="modal-icon">🖨</div>
+                <div class="modal-title">Confirmar Impresión</div>
+                <div class="modal-desc">Verifique los datos antes de mandar a imprimir a BarTender.</div>
+                <div class="confirm-summary" id="empaque-confirm-summary"></div>
+                <button class="action-btn primary" onclick="confirmEmpaquePrint()">
+                    ✅ CONFIRMAR E IMPRIMIR
+                </button>
+                <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:4px;opacity:0.5;" onclick="document.getElementById('modal-empaque-confirm').classList.remove('show')">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════════ MOVEMENTS HUB ═══════════════ -->
+    <!-- ═══════════════ MOVEMENTS MENU (5 MODULES) ═══════════════ -->
     <div class="screen" id="screen-movements">
         <div class="top-bar">
             <h2>Módulos de Movimiento</h2>
+            <span class="sub" style="color: var(--primary-container);">Centro de Operaciones</span>
         </div>
-        <div class="screen-body animate-in">
-            <div class="hub-card" onclick="showScreen('pedidos')" style="border-left:3px solid var(--dispatch);">
-                <div class="hub-header">
-                    <div class="hub-icon green">📋</div>
-                    <div>
-                        <div class="hub-title">Pedidos de Venta</div>
-                        <div class="hub-sub">Crear pedidos · Escanear para cumplir</div>
+        <div class="screen-body animate-in" style="padding-bottom: 80px;">
+            <!-- 1. Pedidos de Venta -->
+            <div class="hub-card-collapsible sales" id="hub-card-pedidos">
+                <div class="hub-card-trigger" onclick="toggleHubCard('pedidos')">
+                    <div class="hub-header">
+                        <div class="hub-icon green" style="background: rgba(52,199,89,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">📋</div>
+                        <div>
+                            <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Pedidos de Venta</div>
+                            <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Crear pedidos · Escanear para cumplir</div>
+                        </div>
+                        <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
                     </div>
-                    <span class="hub-arrow">›</span>
                 </div>
-                <div style="display:flex;gap:6px;margin-top:10px;">
-                    <span class="pedido-status pendiente" style="font-size:0.5rem;">2 PENDIENTES</span>
-                    <span class="pedido-status en-proceso" style="font-size:0.5rem;">1 EN PROCESO</span>
+                <div class="hub-card-content">
+                    <div class="hub-submenu-grid">
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); showScreen('pedidos')">
+                            <span class="btn-icon">📋</span>
+                            <span class="btn-label">Ver Listado</span>
+                        </button>
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); showScreen('pedido-create')">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-label">Crear Pedido</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="hub-card">
-                <div class="hub-header">
-                    <div class="hub-icon amber">⏸</div>
-                    <div>
-                        <div class="hub-title">Stand-By</div>
-                        <div class="hub-sub">Pre-despacho → ZONA_PREDESPACHO</div>
+            <!-- 2. Stand-By -->
+            <div class="hub-card-collapsible standby" id="hub-card-standby">
+                <div class="hub-card-trigger" onclick="toggleHubCard('standby')">
+                    <div class="hub-header">
+                        <div class="hub-icon amber" style="background: rgba(255,204,2,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">⏳</div>
+                        <div>
+                            <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Stand-By</div>
+                            <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Pre-despacho → ZONA_PREDESPACHO</div>
+                        </div>
+                        <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
                     </div>
                 </div>
-                <div class="hub-buttons">
-                    <button class="hub-btn outline">👆 Manual</button>
-                    <button class="hub-btn filled amber">⚡ Ráfaga</button>
+                <div class="hub-card-content">
+                    <div class="hub-submenu-grid">
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); openRFIDScanner('standby')">
+                            <span class="btn-icon">📡</span>
+                            <span class="btn-label">Ráfaga RFID</span>
+                        </button>
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); showScreen('dispatch')">
+                            <span class="btn-icon">📋</span>
+                            <span class="btn-label">Cola Stand-By</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="hub-card" id="hub-calidad">
-                <div class="hub-header">
-                    <div class="hub-icon purple">⊖</div>
-                    <div>
-                        <div class="hub-title">Calidad / Bajas</div>
-                        <div class="hub-sub">Requiere autorización del Supervisor</div>
+            <!-- 3. Despacho -->
+            <div class="hub-card-collapsible dispatch" id="hub-card-dispatch">
+                <div class="hub-card-trigger" onclick="toggleHubCard('dispatch')">
+                    <div class="hub-header">
+                        <div class="hub-icon blue" style="background: rgba(33,150,243,0.1); color: var(--refill-blue); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">🚚</div>
+                        <div>
+                            <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Despacho</div>
+                            <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Salidas definitivas del almacén</div>
+                        </div>
+                        <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
                     </div>
                 </div>
-                <div class="hub-buttons">
-                    <button class="hub-btn outline">👆 Manual</button>
-                    <button class="hub-btn filled purple">⚡ Ráfaga</button>
+                <div class="hub-card-content">
+                    <div class="hub-submenu-grid">
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); showScreen('dispatch')">
+                            <span class="btn-icon">👆</span>
+                            <span class="btn-label">Selección Manual</span>
+                        </button>
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); openRFIDScanner('standby')">
+                            <span class="btn-icon">📡</span>
+                            <span class="btn-label">Ráfaga RFID</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="hub-card" onclick="showScreen('muestras')">
-                <div class="hub-header">
-                    <div class="hub-icon teal">🏪</div>
-                    <div>
-                        <div class="hub-title">Muestras Retornables</div>
-                        <div class="hub-sub">Requiere autorización del Supervisor</div>
+            <!-- 4. Calidad / Bajas -->
+            <div class="hub-card-collapsible quality" id="hub-card-calidad">
+                <div class="hub-card-trigger" onclick="toggleHubCard('calidad')">
+                    <div class="hub-header">
+                        <div class="hub-icon purple" style="background: rgba(175,82,222,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">⊖</div>
+                        <div>
+                            <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Calidad / Bajas</div>
+                            <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Inspección y mermas de mercancía</div>
+                        </div>
+                        <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
                     </div>
-                    <span class="hub-arrow">›</span>
+                </div>
+                <div class="hub-card-content">
+                    <div class="hub-submenu-grid">
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); openCalidadManual()">
+                            <span class="btn-icon">👆</span>
+                            <span class="btn-label">Baja Manual</span>
+                        </button>
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); openRFIDScanner('calidad')">
+                            <span class="btn-icon">📡</span>
+                            <span class="btn-label">Ráfaga RFID</span>
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <!-- 5. Muestras Retornables -->
+            <div class="hub-card-collapsible samples" id="hub-card-muestras">
+                <div class="hub-card-trigger" onclick="toggleHubCard('muestras')">
+                    <div class="hub-header">
+                        <div class="hub-icon teal" style="background: rgba(0,150,136,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">🏪</div>
+                        <div>
+                            <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Muestras Retornables</div>
+                            <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Custodia comercial de pares muestra</div>
+                        </div>
+                        <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                    </div>
+                </div>
+                <div class="hub-card-content">
+                    <div class="hub-submenu-grid">
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); showScreen('muestras')">
+                            <span class="btn-icon">🏪</span>
+                            <span class="btn-label">Ver Muestras</span>
+                        </button>
+                        <button class="hub-submenu-btn" onclick="event.stopPropagation(); openMuestraScanner()">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-label">Nueva Muestra</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ PEDIDOS DE VENTA SUB-MENU ═══════════════ -->
+    <div class="screen" id="screen-pedidos">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Pedidos de Venta</h2>
+                    <span class="sub" style="color: var(--dispatch);">Control de Despachos por Orden</span>
+                </div>
+                <button class="panic-btn" id="btn-create-pedido" onclick="showScreen('pedido-create')" style="font-size: 18px; font-weight: 700;">➕</button>
+            </div>
+        </div>
+        <div class="screen-body animate-in" style="padding-bottom: 80px;">
+            <!-- Count chips (inline header) -->
+            <div style="display: flex; gap: 8px; margin-bottom: var(--space-md); padding: 0 var(--space-xs);">
+                <span class="pedido-status pendiente" id="movements-pendientes-count" style="display: none;">0 PENDIENTES</span>
+                <span class="pedido-status en-proceso" id="movements-proceso-count" style="display: none;">0 EN PROCESO</span>
+            </div>
+            
+            <div id="pedidos-list-body">
+                <!-- Orders will be dynamically loaded here by renderPedidosList() -->
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ STAND-BY SUB-MENU ═══════════════ -->
+    <div class="screen" id="screen-standby-menu">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Módulo Stand-By</h2>
+                    <span class="sub" style="color: var(--amber);">Pre-despacho y Cola Temporal</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in" style="padding-bottom: 80px;">
+            <div class="hub-card" onclick="openRFIDScanner('standby')" style="border-left: 3px solid var(--amber); background: var(--surface-container-high); margin-bottom: var(--space-md); padding: var(--space-xl) var(--space-md);">
+                <div class="hub-header">
+                    <div class="hub-icon amber" style="background: rgba(255,204,2,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">📡</div>
+                    <div>
+                        <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Ráfaga RFID</div>
+                        <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Simulación UHF masiva en zona predespacho</div>
+                    </div>
+                    <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                </div>
+            </div>
+            
+            <div class="hub-card" onclick="showScreen('dispatch')" style="border-left: 3px solid var(--refill-blue); background: var(--surface-container-high); margin-bottom: var(--space-md); padding: var(--space-xl) var(--space-md);">
+                <div class="hub-header">
+                    <div class="hub-icon blue" style="background: rgba(33,150,243,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">📋</div>
+                    <div>
+                        <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Cola de Stand-By</div>
+                        <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Verificar pares listos para confirmación definitiva</div>
+                    </div>
+                    <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ DESPACHO SUB-MENU ═══════════════ -->
+    <div class="screen" id="screen-dispatch-menu">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Módulo Despacho</h2>
+                    <span class="sub" style="color: var(--refill-blue);">Salidas Definitivas de Almacén</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in" style="padding-bottom: 80px;">
+            <div class="hub-card" onclick="showScreen('dispatch')" style="border-left: 3px solid var(--refill-blue); background: var(--surface-container-high); margin-bottom: var(--space-md); padding: var(--space-xl) var(--space-md);">
+                <div class="hub-header">
+                    <div class="hub-icon blue" style="background: rgba(33,150,243,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">👆</div>
+                    <div>
+                        <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Selección Manual</div>
+                        <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Marcar y confirmar salida individual de mercancía</div>
+                    </div>
+                    <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                </div>
+            </div>
+            
+            <div class="hub-card" onclick="openRFIDScanner('standby')" style="border-left: 3px solid var(--amber); background: var(--surface-container-high); margin-bottom: var(--space-md); padding: var(--space-xl) var(--space-md);">
+                <div class="hub-header">
+                    <div class="hub-icon amber" style="background: rgba(255,204,2,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">📡</div>
+                    <div>
+                        <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Salida RFID en Ráfaga</div>
+                        <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Simulación UHF masiva de salida rápida de pallets</div>
+                    </div>
+                    <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CALIDAD SUB-MENU ═══════════════ -->
+    <div class="screen" id="screen-calidad-menu">
+        <div class="top-bar">
+            <div class="top-bar-flex">
+                <button class="back-btn" onclick="showScreen('movements')">←</button>
+                <div>
+                    <h2>Módulo Calidad / Bajas</h2>
+                    <span class="sub" style="color: var(--purple);">Control de Mermas y Cuarentena</span>
+                </div>
+            </div>
+        </div>
+        <div class="screen-body animate-in" style="padding-bottom: 80px;">
+            <div class="hub-card" onclick="openCalidadManual()" style="border-left: 3px solid var(--purple); background: var(--surface-container-high); margin-bottom: var(--space-md); padding: var(--space-xl) var(--space-md);">
+                <div class="hub-header">
+                    <div class="hub-icon purple" style="background: rgba(175,82,222,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">👆</div>
+                    <div>
+                        <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Baja Manual</div>
+                        <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Reportar calzado defectuoso por código de barras</div>
+                    </div>
+                    <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                </div>
+            </div>
+            
+            <div class="hub-card" onclick="openRFIDScanner('calidad')" style="border-left: 3px solid var(--purple); background: var(--surface-container-high); margin-bottom: var(--space-md); padding: var(--space-xl) var(--space-md);">
+                <div class="hub-header">
+                    <div class="hub-icon purple" style="background: rgba(175,82,222,0.1); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: var(--radius-lg);">📡</div>
+                    <div>
+                        <div class="hub-title" style="font-size: 0.9375rem; font-weight: 700; color: var(--on-surface);">Inspección RFID en Ráfaga</div>
+                        <div class="hub-sub" style="font-size: 0.75rem; color: var(--on-surface-variant); opacity: 0.7; margin-top: 2px;">Simulación masiva de descarte de lotes defectuosos</div>
+                    </div>
+                    <span class="hub-arrow" style="margin-left: auto; color: var(--on-surface-variant); font-size: 20px; opacity: 0.4;">›</span>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
         </div>
     </div>
 
@@ -392,6 +737,13 @@
                 </button>
             </div>
         </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
 
         <div class="modal-overlay" id="modal-dispatch">
             <div class="modal-box animate-in">
@@ -406,7 +758,7 @@
                     <label>Observaciones</label>
                     <textarea class="input-field" rows="2" placeholder="Ej: Pedido urgente, caja golpeada..." style="resize:none;">Pedido #4521 — Urgente</textarea>
                 </div>
-                <button class="action-btn green" onclick="document.getElementById('modal-dispatch').classList.remove('show')">
+                <button class="action-btn green" onclick="confirmDispatch()">
                     ✅ CONFIRMAR SALIDA DEFINITIVA
                 </button>
                 <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:4px;opacity:0.5;" onclick="document.getElementById('modal-dispatch').classList.remove('show')">CANCELAR</button>
@@ -473,6 +825,13 @@
 
             <button class="fab" onclick="openMuestraScanner()">➕ Nueva Muestra</button>
         </div>
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showScreen('home')"><span class="icon">🏠</span><span class="label">Inicio</span></button>
+            <button class="nav-item" onclick="showScreen('entry')"><span class="icon">📋</span><span class="label">Entrada</span></button>
+            <button class="nav-item active" onclick="showScreen('movements')"><span class="icon">🔄</span><span class="label">Movim.</span></button>
+            <button class="nav-item" onclick="showScreen('trace')"><span class="icon">📜</span><span class="label">Traza</span></button>
+            <button class="nav-item" onclick="showScreen('settings')"><span class="icon">⚙</span><span class="label">Config</span></button>
+        </div>
 
         <!-- Muestras Scanner Modal -->
         <div class="modal-overlay" id="modal-muestra-scanner">
@@ -524,33 +883,35 @@
         <div class="screen-body animate-in">
             <div class="master-info-card">
                 <div style="font-size:0.75rem;color:var(--refill-blue);font-weight:700;">📦 Caja Master</div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9375rem;font-weight:700;margin:6px 0 2px;">FS-MB-2026A-42-04</div>
-                <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS300CMFFPBL · Talla 42 · Lote 2026A</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.9375rem;font-weight:700;margin:6px 0 2px;" id="refill-master-id">FS-MB-2026A-42-04</div>
+                <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;" id="refill-master-meta">FS300CMFFPBL · Talla 42 · Lote 2026A</div>
                 <div class="progress-bar">
-                    <div class="progress-fill blue" style="width:75%"></div>
+                    <div class="progress-fill blue" id="refill-progress-fill" style="width:62.5%"></div>
                 </div>
-                <div style="font-size:0.8125rem;font-weight:700;color:var(--warning);">Tiene 5 de 8 pares. Faltan 3.</div>
-                <div style="font-size:0.75rem;color:var(--refill-blue);margin-top:4px;">Pares a agregar: 2 → Total: 7/8</div>
+                <div style="font-size:0.8125rem;font-weight:700;color:var(--warning);" id="refill-status-text">Tiene 5 de 8 pares. Faltan 3.</div>
+                <div style="font-size:0.75rem;color:var(--refill-blue);margin-top:4px;" id="refill-added-text">Pares a agregar: 2 → Total: 7/8</div>
             </div>
 
             <div class="refill-step-card">
                 <div style="font-size:0.8125rem;color:var(--primary-container);font-weight:700;margin-bottom:10px;">Agregar Par Individual</div>
                 <div style="display:flex;gap:8px;">
-                    <input class="input-field" placeholder="UUID del Par" style="flex:1;" />
-                    <button style="width:48px;height:48px;border-radius:var(--radius-lg);background:var(--refill-blue);border:none;color:white;font-size:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">+</button>
+                    <input class="input-field" id="refill-add-uuid" placeholder="UUID del Par" style="flex:1;" />
+                    <button style="width:48px;height:48px;border-radius:var(--radius-lg);background:var(--refill-blue);border:none;color:white;font-size:20px;cursor:pointer;transition:all 0.2s;" id="refill-btn-add" onclick="addRefillPair()">+</button>
                 </div>
             </div>
 
-            <div class="child-item">
-                <span style="font-size:0.8125rem;font-weight:500;">FS-2026A-42-017</span>
-                <button class="child-remove">✕</button>
-            </div>
-            <div class="child-item">
-                <span style="font-size:0.8125rem;font-weight:500;">FS-2026A-42-019</span>
-                <button class="child-remove">✕</button>
+            <div id="refill-children-container">
+                <div class="child-item">
+                    <span style="font-size:0.8125rem;font-weight:500;">FS-2026A-42-017</span>
+                    <button class="child-remove" onclick="removeRefillPairElement(this, 'FS-2026A-42-017')">✕</button>
+                </div>
+                <div class="child-item">
+                    <span style="font-size:0.8125rem;font-weight:500;">FS-2026A-42-019</span>
+                    <button class="child-remove" onclick="removeRefillPairElement(this, 'FS-2026A-42-019')">✕</button>
+                </div>
             </div>
 
-            <button class="action-btn blue">✅ CONFIRMAR RELLENADO (2 pares)</button>
+            <button class="action-btn blue" id="refill-btn-confirm" onclick="confirmRefill()">✅ CONFIRMAR RELLENADO (2 pares)</button>
         </div>
     </div>
 
@@ -711,6 +1072,14 @@
                     <div>
                         <div class="settings-label">Mapa de Racks</div>
                         <div class="settings-desc">Visualizar ubicaciones del almacén</div>
+                    </div>
+                    <span class="settings-arrow">›</span>
+                </div>
+                <div class="settings-item" onclick="resetSystemData()" style="color: var(--error);">
+                    <div class="settings-icon red-s" style="background: rgba(255, 59, 48, 0.15);">🔄</div>
+                    <div>
+                        <div class="settings-label" style="color: var(--error);">Restablecer Sistema</div>
+                        <div class="settings-desc">Borrar datos locales y reiniciar valores por defecto</div>
                     </div>
                     <span class="settings-arrow">›</span>
                 </div>
@@ -1006,6 +1375,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Dynamic QR History Container -->
+            <div id="dynamic-qr-history-container"></div>
 
             <!-- Daily Production Groups -->
             <div class="section-title" style="margin-top:16px;">📅 Producción por Día</div>
@@ -1390,88 +1762,16 @@
                         <div class="quick-user-avatar ger-bg">📊</div>
                         <div><div class="quick-user-name">María Rodríguez</div><div class="quick-user-role">Gerente</div></div>
                     </button>
+                    <button class="quick-user-btn" onclick="quickLogin('empaque')">
+                        <div class="quick-user-avatar emp-bg">🖨</div>
+                        <div><div class="quick-user-name">Operador Empaque</div><div class="quick-user-role">Empaque</div></div>
+                    </button>
                 </div>
             </div>
             <div style="margin-top:auto;padding-top:20px;text-align:center;">
                 <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.3;">Puntera Digital v3.0.0</div>
                 <div style="font-size:0.625rem;color:var(--on-surface-variant);opacity:0.2;margin-top:2px;">Kinetic Architect Engine</div>
             </div>
-        </div>
-    </div>
-
-    <!-- ═══════════════ PEDIDOS LIST ═══════════════ -->
-    <div class="screen" id="screen-pedidos">
-        <div class="top-bar">
-            <div class="top-bar-flex">
-                <button class="back-btn" onclick="showScreen('movements')">←</button>
-                <div>
-                    <h2>Pedidos de Venta</h2>
-                    <span class="sub" style="color: var(--dispatch);" id="pedidos-count-sub">3 pedidos activos</span>
-                </div>
-                <button class="panic-btn" id="btn-create-pedido" onclick="showScreen('pedido-create')" title="Nuevo Pedido">➕</button>
-            </div>
-        </div>
-        <div class="screen-body animate-in" id="pedidos-list-body">
-            <div class="pedido-card pendiente" onclick="openPedidoDetail(0)">
-                <div class="pedido-header">
-                    <div>
-                        <div class="pedido-id">Pedido #4521</div>
-                        <div class="pedido-client">Distribuidora Norte</div>
-                    </div>
-                    <span class="pedido-status pendiente">PENDIENTE</span>
-                </div>
-                <div class="pedido-lines-summary">
-                    <div class="pedido-line">
-                        <span class="pedido-line-model">FS300CMFFFPBL · T42</span>
-                        <span class="pedido-line-qty">0/5</span>
-                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill pending" style="width:0%"></div></div>
-                    </div>
-                    <div class="pedido-line">
-                        <span class="pedido-line-model">FS300CMFFFPBL · T43</span>
-                        <span class="pedido-line-qty">0/3</span>
-                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill pending" style="width:0%"></div></div>
-                    </div>
-                </div>
-                <div class="pedido-meta">👤 Carlos Martínez · 05/05/2026 10:30</div>
-            </div>
-
-            <div class="pedido-card en-proceso" onclick="openPedidoDetail(1)">
-                <div class="pedido-header">
-                    <div>
-                        <div class="pedido-id">Pedido #4520</div>
-                        <div class="pedido-client">Calzados Express</div>
-                    </div>
-                    <span class="pedido-status en-proceso">EN PROCESO</span>
-                </div>
-                <div class="pedido-lines-summary">
-                    <div class="pedido-line">
-                        <span class="pedido-line-model">FS302CMN · T40</span>
-                        <span class="pedido-line-qty">4/6</span>
-                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill partial" style="width:66%"></div></div>
-                    </div>
-                </div>
-                <div class="pedido-meta">👤 Carlos Martínez · 04/05/2026 14:20</div>
-            </div>
-
-            <div class="pedido-card completo" onclick="openPedidoDetail(2)">
-                <div class="pedido-header">
-                    <div>
-                        <div class="pedido-id">Pedido #4519</div>
-                        <div class="pedido-client">Tienda Central</div>
-                    </div>
-                    <span class="pedido-status completo">COMPLETO</span>
-                </div>
-                <div class="pedido-lines-summary">
-                    <div class="pedido-line">
-                        <span class="pedido-line-model">FS400BK · T44</span>
-                        <span class="pedido-line-qty">2/2</span>
-                        <div class="pedido-line-progress"><div class="pedido-line-progress-fill done" style="width:100%"></div></div>
-                    </div>
-                </div>
-                <div class="pedido-meta">👤 Carlos Martínez · 03/05/2026 09:00</div>
-            </div>
-
-            <div style="height:20px"></div>
         </div>
     </div>
 
@@ -1507,13 +1807,13 @@
                 <div class="card-title">Líneas del Pedido</div>
                 <div id="pedido-lines-container">
                     <div class="line-builder" data-line-idx="0">
-                        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;">
+                        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;" onchange="updatePedidoPreview()">
                             <option>FS300CMFFFPBL</option><option>FS302CMN</option><option>FS400BK</option><option>SF200LT</option>
                         </select>
-                        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;">
+                        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;" onchange="updatePedidoPreview()">
                             <option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option selected>42</option><option>43</option><option>44</option><option>45</option><option>46</option>
                         </select>
-                        <input class="input-field" type="number" value="5" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" />
+                        <input class="input-field" type="number" value="5" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" oninput="updatePedidoPreview()" />
                         <button class="line-remove-btn" onclick="removePedidoLine(this)">✕</button>
                     </div>
                 </div>
@@ -1605,201 +1905,1549 @@
         </div>
     </div>
 
-</div>
+    <!-- ═══════════════ RFID BURST SCANNER MODAL ═══════════════ -->
+    <!-- ═══════════════ RFID BURST SCANNER MODAL ═══════════════ -->
+    <div class="modal-overlay" id="modal-rfid-scanner">
+        <div class="modal-box animate-in" style="max-width:340px;position:relative;">
+            <div class="modal-icon" id="rfid-modal-icon">⚡</div>
+            <div class="modal-title" id="rfid-modal-title">Escaneo RFID en Ráfaga</div>
+            <div class="modal-desc" id="rfid-modal-desc">Iniciando capturador de tags masivos...</div>
+            
+            <div id="rfid-scanning-visual" style="display:none;margin-bottom:14px;text-align:center;">
+                <div class="rfid-pulse-container">
+                    <div class="rfid-radar-glow"></div>
+                    <div class="rfid-laser-line"></div>
+                    <div style="font-size:32px;font-weight:800;font-family:'Space Grotesk',sans-serif;color:var(--primary-container);margin-top:10px;" id="rfid-counter">0</div>
+                    <div style="font-size:0.625rem;font-weight:700;color:var(--on-surface-variant);opacity:0.6;margin-top:2px;">TAGS LEÍDOS</div>
+                </div>
+            </div>
 
+            <!-- Contenedor dinámico de tags escaneados -->
+            <div class="rfid-list-container" id="rfid-tags-list" style="display:none;margin-bottom:14px;"></div>
+
+            <!-- Acciones iniciales del modal -->
+            <div class="modal-actions" id="rfid-modal-actions" style="display:flex;flex-direction:column;gap:8px;">
+                <button class="action-btn primary" id="btn-start-rfid" onclick="startRFIDScan()">⚡ INICIAR ESCANEO</button>
+                <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;opacity:0.5;" onclick="closeRFIDScanner()">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ MANUAL QUALITY ISSUE MODAL ═══════════════ -->
+    <div class="modal-overlay" id="modal-calidad-manual">
+        <div class="modal-box animate-in" style="max-width:340px;">
+            <div class="modal-icon" style="color: var(--purple); font-size: 2rem; margin-bottom: 8px;">⊖</div>
+            <div class="modal-title">Baja Manual por Calidad</div>
+            <div class="modal-desc">Retire un calzado defectuoso del stock físico y digital.</div>
+            
+            <div class="input-group" style="margin-top: 12px;">
+                <label>UUID del Calzado *</label>
+                <input class="input-field" id="calidad-manual-uuid" placeholder="Ej: FS-2026A-42-025" />
+            </div>
+            
+            <div class="input-group">
+                <label>Motivo de la Baja *</label>
+                <select class="input-field" id="calidad-manual-reason">
+                    <option value="Defecto en suela">Defecto en suela (vulcanizado)</option>
+                    <option value="Costura defectuosa">Costura defectuosa / descosido</option>
+                    <option value="Mancha / imperfección">Mancha o imperfección estética</option>
+                    <option value="Piel agrietada">Piel agrietada / rota</option>
+                    <option value="Talla errónea marcada">Talla errónea de etiquetado</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Detalles Adicionales</label>
+                <textarea class="input-field" id="calidad-manual-details" rows="2" placeholder="Describa el defecto..." style="resize:none;"></textarea>
+            </div>
+            
+            <button class="action-btn purple" style="background: var(--purple); color: white; margin-top: 8px;" onclick="confirmCalidadBajaManual()">
+                ⊖ REGISTRAR BAJA DE CALIDAD
+            </button>
+            <button style="width:100%;padding:14px;background:transparent;border:none;color:var(--on-surface-variant);font-family:inherit;font-size:0.8125rem;cursor:pointer;margin-top:4px;opacity:0.5;" onclick="document.getElementById('modal-calidad-manual').classList.remove('show')">CANCELAR</button>
+        </div>
+    </div>
 <script>
-// ═══ USER SYSTEM ═══
+// ═══ CORE SYSTEM DATA STATE (LOCALSTORAGE PERSISTENCE) ═══
+
+function parseUUIDToModelAndSize(uuid) {
+    const parts = uuid.split('-');
+    let model = 'FS300CMFFPBL';
+    let size = '42';
+    if (parts.length >= 3) {
+        size = parts[2];
+        // Dynamic map based on standard prefixes and sizes in our database
+        if (uuid.includes('2026B') || uuid.includes('302')) {
+            model = 'FS302CMN';
+        } else if (uuid.includes('400') || size === '44') {
+            model = 'FS400BK';
+        } else if (uuid.includes('2026A') || uuid.includes('300') || size === '42' || size === '43') {
+            model = 'FS300CMFFPBL';
+        }
+    }
+    return { model, size };
+}
+
+const DEFAULT_MODELS = [
+    { sku:'FS300CMFFPBL', name:'Foot Safe 300 Composite', origin:'Foot Safe', min:36, max:46, ppbox:8, active:true, image:'img/boot_black.png' },
+    { sku:'FS302CMN', name:'Foot Safe 302', origin:'Foot Safe', min:38, max:45, ppbox:8, active:true, image:'img/boot_brown.png' },
+    { sku:'FS400BK', name:'Foot Safe 400 Black', origin:'Foot Safe', min:39, max:46, ppbox:6, active:true, image:'img/boot_tactical.png' },
+    { sku:'SF200LT', name:'Safety 200 Lite', origin:'Safety', min:36, max:44, ppbox:10, active:false, image:'img/shoe_lite.png' }
+];
+
+const DEFAULT_STATS = { stock: 248, standby: 32, cajasMaster: 31, modelosCount: 4 };
+
+const DEFAULT_PEDIDOS = [
+    { id:'#4521', client:'Distribuidora Norte', status:'pendiente', creator:'Carlos Martínez',
+      date:'05/05/2026 10:30', obs:'Pedido urgente',
+      lines:[{model:'FS300CMFFPBL',size:'42',qty:5,scanned:0},{model:'FS300CMFFPBL',size:'43',qty:3,scanned:0}],
+      scannedPairs:[] },
+    { id:'#4520', client:'Calzados Express', status:'en-proceso', creator:'Carlos Martínez',
+      date:'04/05/2026 14:20', obs:'',
+      lines:[{model:'FS302CMN',size:'40',qty:6,scanned:4}],
+      scannedPairs:[
+        {uuid:'FS-2026B-40-001',time:'14:25',user:'José García'},
+        {uuid:'FS-2026B-40-002',time:'14:26',user:'José García'},
+        {uuid:'FS-2026B-40-003',time:'14:28',user:'José García'},
+        {uuid:'FS-2026B-40-004',time:'14:30',user:'José García'}
+      ] },
+    { id:'#4519', client:'Tienda Central', status:'completo', creator:'Carlos Martínez',
+      date:'03/05/2026 09:00', obs:'',
+      lines:[{model:'FS400BK',size:'44',qty:2,scanned:2}],
+      scannedPairs:[
+        {uuid:'FS-2026A-44-001',time:'09:15',user:'José García'},
+        {uuid:'FS-2026A-44-002',time:'09:17',user:'José García'}
+      ] }
+];
+
+const DEFAULT_MUESTRAS = [
+    { uuid: 'FS-2026A-42-005', model: 'FS300CMFFPBL', size: '42', date: '20/03/2026 14:30', status: 'muestra', client: 'Tienda Central' },
+    { uuid: 'FS-2026B-40-003', model: 'FS302CMN', size: '40', date: '18/03/2026 09:15', status: 'muestra', client: 'Distribuidora Central' },
+    { uuid: 'FS-2026A-44-002', model: 'FS400BK', size: '44', date: '15/03/2026 16:40', status: 'muestra', client: 'Calzados Express' }
+];
+
+const DEFAULT_TRACE = [
+    { type: 'baja', title: 'Baja · Calidad', obs: 'Suela agrietada — Par fuera de circulación', date: '28/05/2026 15:42', user: 'Andrés López', role: 'it', details: 'Defecto en vulcanizado de suela.' },
+    { type: 'despacho', title: 'Despacho · Confirmado', obs: 'Despacho completado — 4 unidades', date: '25/03/2026 11:45', user: 'Carlos Martínez', role: 'supervisor', details: 'Cliente: Distribuidora Norte\n📝 Pedido #4521 — Urgente' },
+    { type: 'standby', title: 'Pre-despacho · Registrado', obs: 'Stand-By en zona predespacho', date: '25/03/2026 09:12', user: 'José García', role: 'auxiliar', details: 'Cliente: Calzados Express\n📝 Caja golpeada pero producto intacto' },
+    { type: 'muestra', title: 'Muestra retornable · FS-2026B-40-003', obs: 'Autorizado por Supervisor', date: '22/03/2026 14:20', user: 'Carlos Martínez', role: 'supervisor', details: 'Cliente: Tienda Central' },
+    { type: 'refill', title: 'Caja rellenada · FS-MB-2026A-42-04', obs: 'Añadidos 2 par(es). Ahora: 7/8', date: '21/03/2026 16:50', user: 'José García', role: 'auxiliar', details: 'Completado con FS-2026A-42-017 y FS-2026A-42-019' },
+    { type: 'produccion', title: 'Producción · FS-MB-2026A-42-01', obs: 'Caja Master completa con 8 unidades', date: '20/03/2026 08:30', user: 'José García', role: 'auxiliar', details: 'Ubicación: Pasillo A, Nivel 1 (R-A01)' }
+];
+
+const DEFAULT_DISPATCH_ITEMS = [
+    { uuid: 'FS-2026A-42-001', model: 'FS300CMFFPBL', size: '42', box: 'FS-MB-2026A-42-01', origin: 'FS', checked: true },
+    { uuid: 'FS-2026A-42-002', model: 'FS300CMFFPBL', size: '42', box: 'FS-MB-2026A-42-01', origin: 'FS', checked: true },
+    { uuid: 'FS-2026A-43-001', model: 'FS300CMFFPBL', size: '43', box: 'Suelto', origin: 'FS', checked: true },
+    { uuid: 'FS-2026B-40-001', model: 'FS302CMN', size: '40', box: 'Suelto', origin: 'FS', checked: true },
+    { uuid: 'FS-2026B-41-001', model: 'FS302CMN', size: '41', box: 'FS-MB-2026B-41-01', origin: 'FS', checked: false },
+    { uuid: 'FS-2026B-41-002', model: 'FS302CMN', size: '41', box: 'FS-MB-2026B-41-01', origin: 'FS', checked: false }
+];
+
+function getAppState() {
+    if (!localStorage.getItem('puntera_state')) {
+        const initialState = {
+            models: DEFAULT_MODELS,
+            stats: DEFAULT_STATS,
+            pedidos: DEFAULT_PEDIDOS,
+            muestras: DEFAULT_MUESTRAS,
+            trace: DEFAULT_TRACE,
+            dispatchItems: DEFAULT_DISPATCH_ITEMS,
+            remainderMode: 'loose',
+            refillPares: ['FS-2026A-42-017', 'FS-2026A-42-019'],
+            currentUser: { name:'Carlos Martínez', role:'supervisor', email:'supervisor@punteradigital.com' },
+            activeBrand: 'Foot Safe',
+            printedButNotEntered: []
+        };
+        localStorage.setItem('puntera_state', JSON.stringify(initialState));
+    }
+    const parsed = JSON.parse(localStorage.getItem('puntera_state'));
+    if (!parsed.printedButNotEntered) {
+        parsed.printedButNotEntered = [];
+        localStorage.setItem('puntera_state', JSON.stringify(parsed));
+    }
+    return parsed;
+}
+
+function saveAppState(state) {
+    localStorage.setItem('puntera_state', JSON.stringify(state));
+}
+
+// ═══ INITIALIZE AND STATE INGESTION ═══
+let state = getAppState();
+let currentUser = state.currentUser;
+let remainderMode = state.remainderMode || 'loose';
 const USERS = {
     'it@punteradigital.com':         { name:'Andrés López',    role:'it',         pass:'it123' },
     'supervisor@punteradigital.com':  { name:'Carlos Martínez', role:'supervisor',  pass:'super123' },
     'auxiliar@punteradigital.com':    { name:'José García',     role:'auxiliar',    pass:'aux123' },
-    'gerente@punteradigital.com':     { name:'María Rodríguez', role:'gerente',     pass:'ger123' }
+    'gerente@punteradigital.com':     { name:'María Rodríguez', role:'gerente',     pass:'ger123' },
+    'empaque@punteradigital.com':     { name:'Operador Empaque', role:'empaque',     pass:'empaque123' }
 };
-let currentUser = { name:'Carlos Martínez', role:'supervisor', email:'supervisor@punteradigital.com' };
 
+window.addEventListener('DOMContentLoaded', () => {
+    initializeUI();
+});
+
+function initializeUI() {
+    applyUserUI();
+    renderHomeStats();
+    renderTraceability();
+    renderCatalog();
+    renderMuestras();
+    renderDispatchList();
+    renderRefillScreen();
+    renderPedidosList();
+    populateEntryModels();
+    updateEntryModelSizes();
+    updateEntryPreview();
+    attachBrandToggleListeners();
+    attachGeneralToggleListeners();
+    
+    // Empaque initializers
+    attachEmpaqueBrandToggleListeners();
+    populateEmpaqueModels();
+    renderDynamicQRHistory();
+
+    // Initialize Pedido Create options dropdown dynamically
+    const initialSelect = document.querySelector('#pedido-lines-container .line-builder select');
+    if (initialSelect) {
+        initialSelect.innerHTML = getModelsDropdownOptionsHTML();
+    }
+    updatePedidoPreview();
+}
+
+function getModelsDropdownOptionsHTML() {
+    const activeModels = state.models.filter(m => m.active);
+    if (activeModels.length === 0) {
+        return '<option value="">Sin modelos activos</option>';
+    }
+    return activeModels.map(m => `<option value="${m.sku}">${m.sku}</option>`).join('');
+}
+
+function renderPedidosList() {
+    const listBody = document.getElementById('pedidos-list-body');
+    if (!listBody) return;
+
+    listBody.innerHTML = '';
+    
+    // Updates count in movements tab inline header chips
+    const pendCount = document.getElementById('movements-pendientes-count');
+    const procCount = document.getElementById('movements-proceso-count');
+    
+    if (pendCount) {
+        const pCount = pedidos.filter(p => p.status === 'pendiente').length;
+        pendCount.textContent = `${pCount} PENDIENTES`;
+        pendCount.style.display = pCount > 0 ? '' : 'none';
+    }
+    if (procCount) {
+        const prCount = pedidos.filter(p => p.status === 'en-proceso').length;
+        procCount.textContent = `${prCount} EN PROCESO`;
+        procCount.style.display = prCount > 0 ? '' : 'none';
+    }
+
+    if (pedidos.length === 0) {
+        listBody.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-text">No hay pedidos activos</div>
+                <div class="empty-state-sub">Haga clic en ➕ para crear uno nuevo</div>
+            </div>
+        `;
+        return;
+    }
+
+    pedidos.forEach((p, idx) => {
+        let linesHTML = '';
+        p.lines.forEach(ln => {
+            const pct = ln.qty > 0 ? Math.round((ln.scanned/ln.qty)*100) : 0;
+            const cls = ln.scanned >= ln.qty ? 'done' : (ln.scanned > 0 ? 'partial' : 'pending');
+            linesHTML += `
+                <div class="pedido-line">
+                    <span class="pedido-line-model" style="color: var(--on-surface); opacity: 0.9;">${ln.model} · T${ln.size}</span>
+                    <span class="pedido-line-qty">${ln.scanned}/${ln.qty}</span>
+                    <div class="pedido-line-progress" style="width:60px;height:4px;background:var(--surface-container-lowest);border-radius:var(--radius-full);overflow:hidden;flex-shrink:0;">
+                        <div class="pedido-line-progress-fill ${cls}" style="height:100%;border-radius:var(--radius-full);width:${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        const cardHTML = `
+            <div class="pedido-card ${p.status}" onclick="openPedidoDetail(${idx})" style="background: var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+                <div class="pedido-header">
+                    <div>
+                        <div class="pedido-id" style="color: var(--on-surface); font-weight: 700;">Pedido ${p.id}</div>
+                        <div class="pedido-client" style="color: var(--on-surface-variant); opacity: 0.8; font-size: 0.75rem; margin-top: 2px;">${p.client}</div>
+                    </div>
+                    <span class="pedido-status ${p.status}">${p.status.replace('-',' ').toUpperCase()}</span>
+                </div>
+                <div class="pedido-lines-summary" style="border-top: 1px solid var(--outline-variant);">
+                    ${linesHTML}
+                </div>
+                <div class="pedido-meta" style="color: var(--on-surface-variant); opacity: 0.5;">👤 ${p.creator} · ${p.date}</div>
+            </div>
+        `;
+        listBody.insertAdjacentHTML('beforeend', cardHTML);
+    });
+}
+
+function renderHomeStats() {
+    // Stock stats
+    document.querySelectorAll('.counter-card').forEach(card => {
+        const label = card.querySelector('.counter-label').textContent.trim();
+        const valueEl = card.querySelector('.counter-value');
+        if (label === 'Stock') valueEl.textContent = state.stats.stock;
+        else if (label === 'Stand-By') valueEl.textContent = state.stats.standby;
+        else if (label === 'Cajas Master') valueEl.textContent = state.stats.cajasMaster;
+        else if (label === 'Modelos') valueEl.textContent = state.models.filter(m => m.active).length;
+    });
+
+    // Rack map screen stats
+    const tPares = document.querySelector('.rack-summary-item:nth-child(1) .rack-summary-value');
+    if (tPares) tPares.textContent = state.stats.stock;
+    const tModelos = document.querySelector('.rack-summary-item:nth-child(2) .rack-summary-value');
+    if (tModelos) tModelos.textContent = state.models.filter(m => m.active).length;
+    
+    // Auto-update total occupancy percentage
+    const occupancy = Math.min(100, Math.round((state.stats.stock / 500) * 100));
+    const tOccupancy = document.querySelector('.rack-summary-item:nth-child(3) .rack-summary-value');
+    if (tOccupancy) tOccupancy.textContent = occupancy + '%';
+    
+    // Updates Mini banner stats on Home
+    const miniStats = document.querySelector('[onclick*="rack-map"] div div:nth-child(2)');
+    if (miniStats) {
+        miniStats.textContent = `8 racks · ${occupancy}% ocupación`;
+    }
+
+    // Set brand UI
+    const homeMode = document.querySelector('.home-mode');
+    if (homeMode) homeMode.textContent = 'Modo: ' + state.activeBrand;
+    
+    // Active selection card details on Home
+    const activeModelSku = document.querySelector('.product-hero-model');
+    if (activeModelSku) {
+        const activeModels = state.models.filter(m => m.active);
+        if (activeModels.length > 0) {
+            activeModelSku.textContent = activeModels[0].sku;
+        }
+    }
+}
+
+// ═══ TRACEABILITY LOGS ENGINE (DYNAMIC) ═══
+function renderTraceability() {
+    const container = document.querySelector('#screen-trace .screen-body');
+    if (!container) return;
+
+    container.innerHTML = '';
+    
+    state.trace.forEach((log, index) => {
+        const typeClass = log.type + '-bg';
+        let icon = '📥';
+        if (log.type === 'baja') icon = '⊖';
+        else if (log.type === 'despacho') icon = '📤';
+        else if (log.type === 'standby') icon = '⏸';
+        else if (log.type === 'muestra') icon = '🏪';
+        else if (log.type === 'refill') icon = '📦';
+
+        const itemHTML = `
+            <div class="trace-item" onclick="toggleTraceDetails(${index})">
+                <div class="trace-row">
+                    <div class="trace-icon ${typeClass}">${icon}</div>
+                    <div style="flex:1;">
+                        <div class="trace-title">${log.title}</div>
+                        <div class="trace-obs">${log.obs}</div>
+                        <div class="trace-date">${log.date} · ${log.type.toUpperCase()}</div>
+                        <div class="user-badge">👤 ${log.user} <span class="role-badge ${log.role}" style="font-size:0.5rem;padding:1px 6px;">${log.role.toUpperCase()}</span></div>
+                    </div>
+                    <span class="expand-icon" id="trace-expand-icon-${index}">▾</span>
+                </div>
+                <div class="trace-details" id="trace-details-${index}" style="display:none;">
+                    <div class="detail-row" style="white-space:pre-wrap;"><span class="icon">📝</span> ${log.details || 'Sin observaciones adicionales.'}</div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', itemHTML);
+    });
+
+    const spacer = document.createElement('div');
+    spacer.style.height = '20px';
+    container.appendChild(spacer);
+}
+
+function toggleTraceDetails(index) {
+    const details = document.getElementById(`trace-details-${index}`);
+    const icon = document.getElementById(`trace-expand-icon-${index}`);
+    if (details) {
+        const isOpen = details.style.display === 'block';
+        details.style.display = isOpen ? 'none' : 'block';
+        if (isOpen) details.classList.remove('open');
+        else details.classList.add('open');
+        if (icon) icon.textContent = isOpen ? '▾' : '▴';
+    }
+}
+
+function logTraceAction(type, title, obs, details) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-VE') + ' ' + now.toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'});
+    state.trace.unshift({
+        type: type,
+        title: title,
+        obs: obs,
+        date: dateStr,
+        user: currentUser.name,
+        role: currentUser.role,
+        details: details
+    });
+    saveAppState(state);
+    renderTraceability();
+}
+
+// ═══ USER & SESSION FLOWS ═══
 function applyUserUI() {
     const h = document.getElementById('home-hello');
     if (h) h.textContent = 'Hola, ' + currentUser.name + ' 👋';
     const rb = document.getElementById('home-role-badge');
     if (rb) { rb.textContent = currentUser.role.toUpperCase(); rb.className = 'role-badge ' + currentUser.role; }
-    // Hide create pedido button for auxiliar/gerente
+    
+    // Role-based authorization toggles
     const cpb = document.getElementById('btn-create-pedido');
     if (cpb) cpb.style.display = (currentUser.role === 'auxiliar' || currentUser.role === 'gerente') ? 'none' : '';
+
+    const settingsUser = document.getElementById('settings-user-email');
+    if (settingsUser) settingsUser.textContent = currentUser.email;
+
+    const logoutDesc = document.getElementById('logout-modal-desc');
+    if (logoutDesc) logoutDesc.textContent = `Sesión actual: ${currentUser.name} (${currentUser.role.toUpperCase()})`;
+
+    // Hide top navigation tab-nav for empaque
+    const tabNav = document.querySelector('.tab-nav');
+    if (tabNav) {
+        tabNav.style.display = (currentUser.role === 'empaque') ? 'none' : 'flex';
+    }
+
+    // Gerente ReadOnly Overlay enforcement
+    const targets = [
+        '#screen-movements .screen-body',
+        '#screen-pedidos .screen-body',
+        '#screen-standby-menu .screen-body',
+        '#screen-dispatch-menu .screen-body',
+        '#screen-calidad-menu .screen-body',
+        '#screen-muestras .screen-body'
+    ];
+    targets.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) {
+            if (currentUser.role === 'gerente') {
+                el.classList.add('readonly-overlay');
+            } else {
+                el.classList.remove('readonly-overlay');
+            }
+        }
+    });
 }
 
 function quickLogin(role) {
     const entry = Object.entries(USERS).find(([,u]) => u.role === role);
     if (!entry) return;
     currentUser = { name: entry[1].name, role: entry[1].role, email: entry[0] };
+    state.currentUser = currentUser;
+    saveAppState(state);
+    
     applyUserUI();
-    showScreen('home');
+    const target = currentUser.role === 'empaque' ? 'empaque' : 'home';
+    showScreen(target);
     showSnackbar('👋 ¡Bienvenido, ' + currentUser.name + '!', 'success');
 }
 
+function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    if (!email || !pass) { showSnackbar('⚠️ Complete todos los campos', 'warning'); return; }
+    const user = USERS[email];
+    if (!user || user.pass !== pass) { showSnackbar('❌ Credenciales incorrectas', 'error'); return; }
+    currentUser = { name: user.name, role: user.role, email: email };
+    state.currentUser = currentUser;
+    saveAppState(state);
+
+    applyUserUI();
+    const target = currentUser.role === 'empaque' ? 'empaque' : 'home';
+    showScreen(target);
+    showSnackbar('👋 ¡Bienvenido, ' + currentUser.name + '!', 'success');
+}
+
+function confirmLogout() {
+    document.getElementById('modal-logout').classList.remove('show');
+    showScreen('login');
+    showSnackbar('🔒 Sesión cerrada', 'info');
+}
+
 // ═══ SCREEN NAVIGATION ═══
-const tabMap = { home:0, entry:1, movements:2, pedidos:3, muestras:4, refill:5, trace:6, settings:7 };
-const bottomMap = { home:0, entry:1, movements:2, trace:3, settings:4 };
+const tabMap = {
+    home: 0,
+    entry: 1,
+    movements: 2,
+    pedidos: 2,
+    'standby-menu': 2,
+    'dispatch-menu': 2,
+    'calidad-menu': 2,
+    'pedido-detail': 2,
+    'pedido-create': 2,
+    muestras: 3,
+    refill: 4,
+    trace: 5,
+    settings: 6
+};
+
+const bottomMap = {
+    home: 0,
+    entry: 1,
+    movements: 2,
+    pedidos: 2,
+    'standby-menu': 2,
+    'dispatch-menu': 2,
+    'calidad-menu': 2,
+    'pedido-detail': 2,
+    'pedido-create': 2,
+    muestras: 2,
+    dispatch: 2,
+    trace: 3,
+    settings: 4
+};
 
 function showScreen(name) {
+    if (currentUser && currentUser.role === 'empaque') {
+        const allowed = ['empaque', 'printer-config', 'qr-history', 'login'];
+        if (!allowed.includes(name)) {
+            name = 'empaque';
+        }
+    }
+
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const screen = document.getElementById('screen-' + name);
     if (screen) screen.classList.add('active');
+    
     document.querySelectorAll('.tab-btn').forEach((b, i) => {
         b.classList.toggle('active', i === tabMap[name]);
     });
-    document.querySelectorAll('.nav-item').forEach((n, i) => {
-        n.classList.toggle('active', i === bottomMap[name]);
+    
+    document.querySelectorAll('.bottom-nav').forEach(nav => {
+        nav.querySelectorAll('.nav-item').forEach((n, i) => {
+            n.classList.toggle('active', i === bottomMap[name]);
+        });
+    });
+
+    if (name === 'movements') {
+        document.querySelectorAll('.hub-card-collapsible').forEach(c => {
+            c.classList.remove('expanded');
+        });
+    }
+}
+
+// ═══ BRAND SELECTION & ROBUST TOGGLING ═══
+function attachBrandToggleListeners() {
+    document.querySelectorAll('.origin-chip').forEach((chip, index) => {
+        // Clear previous event listeners by cloning
+        const newChip = chip.cloneNode(true);
+        chip.parentNode.replaceChild(newChip, chip);
+
+        newChip.addEventListener('click', () => {
+            const isSafety = newChip.textContent.includes('Safety') || index === 1;
+            state.activeBrand = isSafety ? 'Safety' : 'Foot Safe';
+            saveAppState(state);
+
+            // Toggles active colors on chips
+            const row = newChip.parentElement;
+            const fsChip = row.children[0];
+            const sfChip = row.children[1];
+
+            if (isSafety) {
+                sfChip.className = 'origin-chip sf-active';
+                sfChip.textContent = '✓ Safety';
+                fsChip.className = 'origin-chip sf';
+                fsChip.textContent = 'Foot Safe';
+            } else {
+                fsChip.className = 'origin-chip fs';
+                fsChip.textContent = '✓ Foot Safe';
+                sfChip.className = 'origin-chip sf';
+                sfChip.textContent = 'Safety';
+            }
+
+            document.querySelectorAll('.home-mode').forEach(m => m.textContent = 'Modo: ' + state.activeBrand);
+            showSnackbar('🏷 Marca seleccionada: ' + state.activeBrand, 'info');
+            populateEntryModels();
+        });
+    });
+
+    // Synchronize initial brand styling
+    const row = document.querySelector('.origin-row');
+    if (row) {
+        const fsChip = row.children[0];
+        const sfChip = row.children[1];
+        if (state.activeBrand === 'Safety') {
+            sfChip.className = 'origin-chip sf-active';
+            sfChip.textContent = '✓ Safety';
+            fsChip.className = 'origin-chip sf';
+            fsChip.textContent = 'Foot Safe';
+        } else {
+            fsChip.className = 'origin-chip fs';
+            fsChip.textContent = '✓ Foot Safe';
+            sfChip.className = 'origin-chip sf';
+            sfChip.textContent = 'Safety';
+        }
+    }
+}
+
+// ═══ GENERAL TOGGLE SWITCHES ═══
+function attachGeneralToggleListeners() {
+    document.querySelectorAll('.toggle-switch').forEach(sw => {
+        // Clone to clear previous event listeners
+        const newSw = sw.cloneNode(true);
+        sw.parentNode.replaceChild(newSw, sw);
+
+        newSw.addEventListener('click', () => {
+            newSw.classList.toggle('on');
+            
+            // Auto-boxing specific toggle
+            if (newSw.id === 'entry-master-toggle') {
+                const ppBoxGroup = document.getElementById('entry-ppbox-group');
+                const previewBox = document.getElementById('entry-preview-box');
+                const isAutoBox = newSw.classList.contains('on');
+                
+                if (ppBoxGroup) ppBoxGroup.style.display = isAutoBox ? 'block' : 'none';
+                if (previewBox) previewBox.style.display = isAutoBox ? 'block' : 'none';
+                
+                const toggleSub = document.getElementById('entry-toggle-sub');
+                if (toggleSub) {
+                    toggleSub.textContent = isAutoBox ? 'Auto-boxing activo' : 'Pares sueltos (Desactivado)';
+                }
+                updateEntryPreview();
+            } else if (newSw.id === 'empaque-master-toggle') {
+                const ppBoxGroup = document.getElementById('empaque-ppbox-group');
+                const previewBox = document.getElementById('empaque-preview-box');
+                const isAutoBox = newSw.classList.contains('on');
+                
+                if (ppBoxGroup) ppBoxGroup.style.display = isAutoBox ? 'block' : 'none';
+                if (previewBox) previewBox.style.display = isAutoBox ? 'block' : 'none';
+                
+                const toggleSub = document.getElementById('empaque-toggle-sub');
+                if (toggleSub) {
+                    toggleSub.textContent = isAutoBox ? 'Auto-boxing activo' : 'Pares sueltos (Desactivado)';
+                }
+                updateEmpaquePreview();
+            } else {
+                // Secondary switches
+                const previewBox = newSw.closest('.card')?.querySelector('.preview-box');
+                if (previewBox) previewBox.style.display = newSw.classList.contains('on') ? 'block' : 'none';
+                updateEntryPreview();
+                updateEmpaquePreview();
+            }
+        });
     });
 }
 
-// ═══ ORIGIN CHIP TOGGLE ═══
-document.querySelectorAll('.origin-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-        const row = chip.parentElement;
-        row.querySelectorAll('.origin-chip').forEach(c => {
-            c.classList.remove('fs', 'sf');
-            c.classList.add(c === chip ? (c.textContent.includes('Safe') ? 'fs' : 'sf-active') : 'sf');
-        });
-        if (chip.textContent.includes('Safety')) {
-            chip.style.background = 'var(--secondary-container)';
-            chip.style.color = 'white';
-            chip.textContent = '✓ Safety';
-            const other = row.children[0];
-            if (other !== chip) {
-                other.style.background = 'var(--surface-container-lowest)';
-                other.style.color = 'var(--on-surface-variant)';
-                other.textContent = 'Foot Safe';
-                other.className = 'origin-chip sf';
-            }
-            chip.className = 'origin-chip';
-            document.querySelectorAll('.home-mode').forEach(m => m.textContent = 'Modo: Safety');
-        } else {
-            chip.style.background = '';
-            chip.style.color = '';
-            chip.textContent = '✓ Foot Safe';
-            chip.className = 'origin-chip fs';
-            const other = row.children[1];
-            if (other !== chip) {
-                other.style.background = 'var(--surface-container-lowest)';
-                other.style.color = 'var(--on-surface-variant)';
-                other.textContent = 'Safety';
-                other.className = 'origin-chip sf';
-            }
-            document.querySelectorAll('.home-mode').forEach(m => m.textContent = 'Modo: Foot Safe');
-        }
-    });
-});
+// ═══ DYNAMIC ENTRY & AUTO-BOXING SYSTEM ═══
+function populateEntryModels() {
+    const select = document.getElementById('entry-model');
+    if (!select) return;
 
-// ═══ TOGGLE SWITCH ═══
-document.querySelectorAll('.toggle-switch').forEach(sw => {
-    sw.addEventListener('click', () => {
-        sw.classList.toggle('on');
-        const previewBox = sw.closest('.card')?.querySelector('.preview-box');
-        if (previewBox) previewBox.style.display = sw.classList.contains('on') ? 'block' : 'none';
-    });
-});
+    select.innerHTML = '';
+    // Display only active models matching selected brand origin
+    const brandOrigin = state.activeBrand;
+    const filtered = state.models.filter(m => m.active && m.origin === brandOrigin);
 
-// ═══ REMAINDER CHIPS ═══
-document.querySelectorAll('.rem-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-        const parent = chip.parentElement;
-        const desc = parent.parentElement.querySelector('.rem-desc');
-        parent.querySelectorAll('.rem-chip').forEach(c => { c.className = 'rem-chip inactive'; });
-        if (chip.textContent.includes('sueltos')) {
-            chip.className = 'rem-chip active-loose';
-            if (desc) desc.textContent = 'Se generarán etiquetas individuales sin caja padre.';
-        } else {
-            chip.className = 'rem-chip active-fill';
-            if (desc) desc.textContent = 'Se creará una caja marcada como "Pendiente por Rellenar" (1/8).';
-        }
-    });
-});
+    if (filtered.length === 0) {
+        select.innerHTML = '<option value="">Sin modelos para esta marca</option>';
+        return;
+    }
 
-// ═══ DISPATCH CHECKBOXES ═══
-document.querySelectorAll('.dispatch-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const cb = item.querySelector('.checkbox');
-        cb.classList.toggle('checked');
-        cb.textContent = cb.classList.contains('checked') ? '✓' : '';
-        item.classList.toggle('selected', cb.classList.contains('checked'));
-        updateDispatchCount();
+    filtered.forEach(m => {
+        select.innerHTML += `<option value="${m.sku}">${m.sku} — ${m.name}</option>`;
     });
-});
 
-function updateDispatchCount() {
-    const total = document.querySelectorAll('#screen-dispatch .dispatch-item').length;
-    const sel = document.querySelectorAll('#screen-dispatch .checkbox.checked').length;
-    const counter = document.querySelector('.dispatch-count');
-    if (counter) counter.textContent = sel + ' de ' + total + ' seleccionados';
-    const btn = document.querySelector('#screen-dispatch .action-btn.green');
-    if (btn) btn.innerHTML = '🚚 CONFIRMAR SALIDA (' + sel + ')';
+    updateEntryModelSizes();
 }
 
-document.querySelectorAll('.dispatch-actions button').forEach((btn, i) => {
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('#screen-dispatch .dispatch-item').forEach(item => {
-            const cb = item.querySelector('.checkbox');
-            if (i === 0) { cb.classList.add('checked'); cb.textContent = '✓'; item.classList.add('selected'); }
-            else { cb.classList.remove('checked'); cb.textContent = ''; item.classList.remove('selected'); }
-        });
-        updateDispatchCount();
-    });
-});
+function updateEntryModelSizes() {
+    const mSelect = document.getElementById('entry-model');
+    const sSelect = document.getElementById('entry-size');
+    if (!mSelect || !sSelect) return;
 
-// ═══ TRACE EXPAND ═══
-document.querySelectorAll('#screen-trace .trace-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const details = item.querySelector('.trace-details');
-        const icon = item.querySelector('.expand-icon');
-        if (details) {
-            details.classList.toggle('open');
-            if (icon) icon.textContent = details.classList.contains('open') ? '▴' : '▾';
+    const sku = mSelect.value;
+    const model = state.models.find(m => m.sku === sku);
+    
+    sSelect.innerHTML = '';
+    if (!model) return;
+
+    // Generates select range from min size to max size
+    for (let size = model.min; size <= model.max; size++) {
+        const option = document.createElement('option');
+        option.value = size;
+        option.textContent = size;
+        if (size === 42) option.selected = true; // standard default
+        sSelect.appendChild(option);
+    }
+    
+    // Updates Pares por Caja field automatically with default model config
+    const ppBoxField = document.getElementById('entry-ppbox');
+    if (ppBoxField) ppBoxField.value = model.ppbox || 8;
+
+    updateEntryPreview();
+}
+
+function setRemainderMode(mode) {
+    remainderMode = mode;
+    state.remainderMode = mode;
+    saveAppState(state);
+
+    const looseChip = document.getElementById('entry-rem-loose');
+    const incChip = document.getElementById('entry-rem-incomplete');
+    const desc = document.getElementById('entry-rem-desc');
+
+    if (mode === 'loose') {
+        if (looseChip) looseChip.className = 'rem-chip active-loose';
+        if (incChip) incChip.className = 'rem-chip inactive';
+        if (desc) desc.textContent = 'Se generarán etiquetas individuales sin caja padre.';
+    } else {
+        if (looseChip) looseChip.className = 'rem-chip inactive';
+        if (incChip) incChip.className = 'rem-chip active-fill';
+        if (desc) desc.textContent = 'Se creará una caja marcada como "Pendiente por Rellenar".';
+    }
+    updateEntryPreview();
+}
+
+function updateEntryPreview() {
+    const model = document.getElementById('entry-model')?.value || 'FS300CMFFPBL';
+    const qty = parseInt(document.getElementById('entry-qty')?.value) || 0;
+    const ppbox = parseInt(document.getElementById('entry-ppbox')?.value) || 8;
+    const isMasterOn = document.getElementById('entry-master-toggle')?.classList.contains('on');
+
+    const mText = document.getElementById('entry-preview-master');
+    const eText = document.getElementById('entry-preview-extra');
+    const toggleSub = document.getElementById('entry-toggle-sub');
+
+    if (!isMasterOn) {
+        if (mText) mText.textContent = `✅ ${qty} pares individuales (sin caja padre)`;
+        if (eText) eText.style.display = 'none';
+        if (toggleSub) toggleSub.textContent = 'Ingreso de calzado suelto';
+        return;
+    }
+
+    const cajasCompletas = Math.floor(qty / ppbox);
+    const sobrante = qty % ppbox;
+
+    if (toggleSub) {
+        toggleSub.textContent = `${cajasCompletas} cajas × ${ppbox} pares + ${sobrante} sueltos`;
+    }
+
+    if (mText) {
+        mText.textContent = cajasCompletas > 0 
+            ? `✅ ${cajasCompletas} Cajas Master completas (${cajasCompletas * ppbox} pares)`
+            : '⚠️ 0 Cajas Master completas';
+    }
+
+    if (eText) {
+        if (sobrante > 0) {
+            eText.style.display = 'block';
+            if (remainderMode === 'loose') {
+                eText.textContent = `+ ${sobrante} par(es) suelto(s)`;
+                eText.className = 'preview-line orange';
+            } else {
+                eText.textContent = `+ 1 caja incompleta (${sobrante}/${ppbox} pares)`;
+                eText.className = 'preview-line orange';
+            }
+        } else {
+            eText.style.display = 'none';
         }
-    });
-});
+    }
+}
 
-// ═══ MUESTRA ACTIONS ═══
-document.querySelectorAll('.muestra-btn.outline-green').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const card = btn.closest('.muestra-card');
-        card.style.transition = 'all 0.4s';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(-100%)';
-        setTimeout(() => {
-            card.innerHTML = '<div style="padding:14px;text-align:center;color:var(--dispatch);font-weight:700;font-size:0.875rem;">✅ Retornado al Stock</div>';
-            card.style.opacity = '1';
-            card.style.transform = 'translateX(0)';
-        }, 400);
-    });
-});
-document.querySelectorAll('.muestra-btn.filled-orange').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const card = btn.closest('.muestra-card');
-        const badge = card.querySelector('.muestra-badge');
-        if (badge) { badge.textContent = 'VENDIDA'; badge.style.background = 'rgba(255,149,0,0.12)'; badge.style.color = 'var(--warning)'; }
-        card.querySelector('.muestra-actions').innerHTML = '<div style="text-align:center;color:var(--warning);font-size:0.75rem;font-weight:600;padding:6px 0;">🛒 Cliente se quedó con el par</div>';
-    });
-});
+function handleEntryRegister() {
+    const type = document.getElementById('entry-type').value;
+    const model = document.getElementById('entry-model').value;
+    const size = document.getElementById('entry-size').value;
+    const lote = document.getElementById('entry-lote').value;
+    const qty = parseInt(document.getElementById('entry-qty').value) || 0;
+    const rack = document.getElementById('entry-rack').value;
+    const ppbox = parseInt(document.getElementById('entry-ppbox').value) || 8;
+    const isMasterOn = document.getElementById('entry-master-toggle').classList.contains('on');
 
-// ═══ REFILL ═══
-let refillChildCount = 2;
-document.querySelectorAll('.child-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-        btn.closest('.child-item').remove();
-        refillChildCount--;
-        const total = 5 + refillChildCount;
-        document.querySelector('.progress-fill.blue').style.width = ((total / 8) * 100) + '%';
-        const confirmBtn = document.querySelector('#screen-refill .action-btn.blue');
-        if (confirmBtn) confirmBtn.textContent = '✅ CONFIRMAR RELLENADO (' + refillChildCount + ' pares)';
-    });
-});
+    if (qty <= 0) {
+        showSnackbar('⚠️ Ingrese una cantidad válida mayor a 0', 'warning');
+        return;
+    }
 
-// ═══ ACTION BUTTON FEEDBACK ═══
+    const summary = document.getElementById('entry-confirm-summary');
+    
+    let boxesDetail = 'Pares sueltos (sin auto-boxing)';
+    if (isMasterOn) {
+        const cajasCompletas = Math.floor(qty / ppbox);
+        const sobrante = qty % ppbox;
+        boxesDetail = `${cajasCompletas} completas`;
+        if (sobrante > 0) {
+            boxesDetail += ` + ${sobrante} par(es) suelto(s) (${remainderMode === 'loose' ? 'sueltos' : 'caja incompleta'})`;
+        }
+    }
+
+    summary.innerHTML = `
+        <div class="confirm-row"><span class="confirm-label">Tipo Entrada:</span> ${type}</div>
+        <div class="confirm-row"><span class="confirm-label">Modelo:</span> ${model}</div>
+        <div class="confirm-row"><span class="confirm-label">Talla:</span> ${size}</div>
+        <div class="confirm-row"><span class="confirm-label">Lote:</span> ${lote}</div>
+        <div class="confirm-row"><span class="confirm-label">Cantidad:</span> ${qty} pares</div>
+        <div class="confirm-row"><span class="confirm-label">Ubicación:</span> ${rack}</div>
+        <div class="confirm-row"><span class="confirm-label">Cajas Master:</span> ${boxesDetail}</div>
+    `;
+
+    document.getElementById('modal-entry-confirm').classList.add('show');
+}
+
+function confirmEntryRegister() {
+    document.getElementById('modal-entry-confirm').classList.remove('show');
+    
+    const type = document.getElementById('entry-type').value;
+    const model = document.getElementById('entry-model').value;
+    const size = document.getElementById('entry-size').value;
+    const lote = document.getElementById('entry-lote').value;
+    const qty = parseInt(document.getElementById('entry-qty').value) || 0;
+    const rack = document.getElementById('entry-rack').value;
+    const ppbox = parseInt(document.getElementById('entry-ppbox').value) || 8;
+    const isMasterOn = document.getElementById('entry-master-toggle').classList.contains('on');
+
+    // Computes and persists changes
+    state.stats.stock += qty;
+    
+    let boxSummaryText = '';
+    if (isMasterOn) {
+        const cajasCompletas = Math.floor(qty / ppbox);
+        state.stats.cajasMaster += cajasCompletas;
+        boxSummaryText = `📦 ${cajasCompletas} Cajas Master completas`;
+        const sobrante = qty % ppbox;
+        if (sobrante > 0) {
+            boxSummaryText += remainderMode === 'loose' 
+                ? ` + ${sobrante} par(es) suelto(s)` 
+                : ' + 1 caja incompleta registrada';
+        }
+    } else {
+        boxSummaryText = `📦 ${qty} pares individuales registrados`;
+    }
+
+    saveAppState(state);
+    renderHomeStats();
+
+    // Trace registration
+    const details = `Tipo: ${type}\nModelo: ${model}\nTalla: ${size}\nLote: ${lote}\nUbicación: ${rack}\nDetalles Cajas: ${boxSummaryText}`;
+    logTraceAction('produccion', `Registro Entrada · ${model}`, `Ingresados ${qty} pares en rack ${rack}`, details);
+
+    // Dynamic success banner
+    const banner = document.getElementById('entry-success-banner');
+    const detail = document.getElementById('success-detail');
+    detail.innerHTML = `
+        <div>✅ ${qty} pares ingresados correctamente en el almacén.</div>
+        <div>📍 Ubicación asignada: Pasillo ${rack.split('-')[1].charAt(0)}, Rack: ${rack}</div>
+        <div>🖨 Etiquetas QR enviadas a BarTender</div>
+        <div style="margin-top:8px;font-size:0.6875rem;opacity:0.5;font-family:monospace;">ID Lote Generado: PD-LOT-${lote}-${size}-${Math.floor(Math.random()*900+100)}</div>
+    `;
+    banner.style.display = 'block';
+    banner.classList.add('animate-in');
+    
+    document.getElementById('btn-entry-register').style.display = 'none';
+    showSnackbar('✅ Ingreso exitoso y QR impreso', 'success');
+}
+
+function dismissEntrySuccess() {
+    document.getElementById('entry-success-banner').style.display = 'none';
+    document.getElementById('btn-entry-register').style.display = '';
+    // resets input values for clean UI
+    document.getElementById('entry-qty').value = '25';
+    updateEntryPreview();
+}
+
+// ═══ DYNAMIC DISPATCH & Pre-despacho MODULE ═══
+function renderDispatchList() {
+    const list = document.querySelector('#screen-dispatch .screen-body');
+    if (!list) return;
+
+    // Cleans static list except for structure elements
+    const elementsToRemove = list.querySelectorAll('.dispatch-group-title, .dispatch-item, .sticky-bottom');
+    elementsToRemove.forEach(el => el.remove());
+
+    // Group items by Model + Lote
+    const grouped = {};
+    state.dispatchItems.forEach(item => {
+        const key = `${item.model} · Lote: 2026A`; // demo constant lote
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+    });
+
+    Object.entries(grouped).forEach(([groupName, items]) => {
+        const titleHTML = `<div class="dispatch-group-title">${groupName}</div>`;
+        list.appendChild(document.createRange().createContextualFragment(titleHTML));
+
+        items.forEach(item => {
+            const isSelClass = item.checked ? 'selected' : '';
+            const isCheckedIcon = item.checked ? '✓' : '';
+            const isCheckedClass = item.checked ? 'checked' : '';
+
+            const itemHTML = `
+                <div class="dispatch-item ${isSelClass}" onclick="toggleDispatchItem('${item.uuid}')">
+                    <div class="checkbox ${isCheckedClass}">${isCheckedIcon}</div>
+                    <div>
+                        <div class="dispatch-uuid">${item.uuid}</div>
+                        <div class="dispatch-meta">Talla: ${item.size} · 📦 ${item.box}</div>
+                    </div>
+                    <span class="origin-badge fs">${item.origin}</span>
+                </div>
+            `;
+            list.appendChild(document.createRange().createContextualFragment(itemHTML));
+        });
+    });
+
+    // Append sticky bottom dispatch action bar
+    const bottomBar = `
+        <div class="sticky-bottom">
+            <button class="action-btn green" onclick="openDispatchConfirmModal()">
+                🚚 CONFIRMAR SALIDA (${state.dispatchItems.filter(i=>i.checked).length})
+            </button>
+        </div>
+    `;
+    list.appendChild(document.createRange().createContextualFragment(bottomBar));
+}
+
+function toggleDispatchItem(uuid) {
+    const item = state.dispatchItems.find(i => i.uuid === uuid);
+    if (!item) return;
+    item.checked = !item.checked;
+    saveAppState(state);
+    renderDispatchList();
+}
+
+function openDispatchConfirmModal() {
+    const checkedCount = state.dispatchItems.filter(i => i.checked).length;
+    if (checkedCount === 0) {
+        showSnackbar('⚠️ Seleccione al menos un par para despachar', 'warning');
+        return;
+    }
+    
+    // Updates modal title dynamically
+    const modal = document.getElementById('modal-dispatch');
+    const title = modal.querySelector('.modal-title');
+    const desc = modal.querySelector('.modal-desc');
+    
+    if (title) title.textContent = `Despachar ${checkedCount} Calzados`;
+    if (desc) desc.textContent = `Se registrará la salida física y digital de ${checkedCount} unidades del stock.`;
+    
+    modal.classList.add('show');
+}
+
+function confirmDispatch() {
+    const client = document.querySelector('#modal-dispatch input').value.trim() || 'Cliente Genérico';
+    const obs = document.querySelector('#modal-dispatch textarea').value.trim() || 'Sin observaciones';
+
+    const checkedItems = state.dispatchItems.filter(i => i.checked);
+    const count = checkedItems.length;
+
+    // State calculation
+    state.stats.stock -= count;
+    state.stats.standby = Math.max(0, state.stats.standby - count);
+    
+    // Deletes items from pre-despacho list
+    state.dispatchItems = state.dispatchItems.filter(i => !i.checked);
+    saveAppState(state);
+
+    // Trace logging
+    const details = `Cliente: ${client}\nObservaciones: ${obs}\nItems Despachados:\n` + checkedItems.map(i=>`- ${i.uuid} (${i.model} T${i.size})`).join('\n');
+    logTraceAction('despacho', 'Despacho Completado', `Confirmada salida de ${count} pares para ${client}`, details);
+
+    // Reset modals and selections
+    document.getElementById('modal-dispatch').classList.remove('show');
+    renderHomeStats();
+    renderDispatchList();
+
+    showSnackbar('🚚 Despacho exitoso registrado en Trazabilidad', 'success');
+    
+    // Automatically redirect to Traceability to audite
+    setTimeout(() => {
+        showScreen('trace');
+    }, 800);
+}
+
+// ═══ DYNAMIC CATALOG CRUD SYSTEM ═══
+let editingNewModel = false;
+
+function renderCatalog() {
+    const grid = document.querySelector('.catalog-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    
+    state.models.forEach(model => {
+        const statusClass = model.active ? 'active' : 'inactive';
+        const cardHTML = `
+            <div class="catalog-item" onclick="openEditModel('${model.sku}', '${model.name}', '${model.origin}', '${model.min}', '${model.max}', '${model.ppbox}')">
+                <div class="catalog-status ${statusClass}"></div>
+                <div class="catalog-img"><img src="${model.image || 'img/boot_black.png'}" alt="${model.sku}" onerror="this.src='img/boot_black.png'" /></div>
+                <div class="catalog-name">${model.sku}</div>
+                <div class="catalog-sku">${model.name}</div>
+            </div>
+        `;
+        grid.insertAdjacentHTML('beforeend', cardHTML);
+    });
+}
+
+function openNewModel() {
+    editingNewModel = true;
+    document.getElementById('catalog-edit-title').textContent = 'Nuevo Modelo';
+    document.getElementById('catalog-edit-sub').textContent = 'Agregar al catálogo';
+    document.getElementById('catalog-edit-sub').style.color = 'var(--dispatch)';
+    
+    // Clear inputs
+    document.getElementById('edit-model-sku').value = '';
+    document.getElementById('edit-model-sku').readOnly = false;
+    document.getElementById('edit-model-name').value = '';
+    document.getElementById('edit-model-origin').selectedIndex = 0;
+    document.getElementById('edit-model-min').value = '36';
+    document.getElementById('edit-model-max').value = '46';
+    document.getElementById('edit-model-ppbox').value = '8';
+    
+    const img = document.getElementById('catalog-edit-img');
+    if (img) img.src = 'img/boot_black.png';
+    const zone = document.querySelector('.img-upload-zone');
+    if (zone) zone.classList.remove('has-image');
+
+    document.getElementById('btn-save-model').innerHTML = '✅ CREAR MODELO';
+    document.getElementById('btn-delete-model').style.display = 'none';
+    
+    showScreen('catalog-edit');
+}
+
+function openEditModel(sku, name, origin, min, max, ppbox) {
+    editingNewModel = false;
+    document.getElementById('catalog-edit-title').textContent = 'Editar Modelo';
+    document.getElementById('catalog-edit-sub').textContent = sku;
+    document.getElementById('catalog-edit-sub').style.color = '';
+    
+    document.getElementById('edit-model-sku').value = sku;
+    document.getElementById('edit-model-sku').readOnly = true; // SKU is key
+    document.getElementById('edit-model-name').value = name;
+    document.getElementById('edit-model-origin').value = origin;
+    document.getElementById('edit-model-min').value = min;
+    document.getElementById('edit-model-max').value = max;
+    document.getElementById('edit-model-ppbox').value = ppbox;
+
+    // Resolves image dynamically
+    const model = state.models.find(m => m.sku === sku);
+    const img = document.getElementById('catalog-edit-img');
+    if (img && model) img.src = model.image || 'img/boot_black.png';
+
+    const zone = document.querySelector('.img-upload-zone');
+    if (zone) zone.classList.add('has-image');
+
+    document.getElementById('btn-save-model').innerHTML = '💾 GUARDAR CAMBIOS';
+    
+    const delBtn = document.getElementById('btn-delete-model');
+    if (delBtn) {
+        delBtn.style.display = '';
+        delBtn.onclick = () => deleteModel(sku);
+    }
+
+    showScreen('catalog-edit');
+}
+
+function saveModel() {
+    const sku = document.getElementById('edit-model-sku').value.trim().toUpperCase();
+    const name = document.getElementById('edit-model-name').value.trim();
+    const origin = document.getElementById('edit-model-origin').value;
+    const min = parseInt(document.getElementById('edit-model-min').value) || 36;
+    const max = parseInt(document.getElementById('edit-model-max').value) || 46;
+    const ppbox = parseInt(document.getElementById('edit-model-ppbox').value) || 8;
+
+    if (!sku || !name) {
+        showSnackbar('⚠️ Complete SKU y Nombre Comercial', 'warning');
+        return;
+    }
+
+    // Resolves image name
+    let image = 'img/boot_black.png';
+    if (sku.includes('BROWN') || sku.includes('302')) image = 'img/boot_brown.png';
+    else if (sku.includes('TACTICAL') || sku.includes('400')) image = 'img/boot_tactical.png';
+    else if (sku.includes('LITE') || sku.includes('200')) image = 'img/shoe_lite.png';
+
+    if (editingNewModel) {
+        // Validation check for duplicates
+        if (state.models.some(m => m.sku === sku)) {
+            showSnackbar('❌ Ya existe un modelo registrado con ese SKU', 'error');
+            return;
+        }
+        state.models.push({ sku, name, origin, min, max, ppbox, active: true, image });
+        logTraceAction('produccion', `Catálogo · Creado`, `Añadido nuevo modelo ${sku} al catálogo`, `Nombre: ${name}\nMarca: ${origin}\nRangos: ${min}-${max}`);
+    } else {
+        const model = state.models.find(m => m.sku === sku);
+        if (model) {
+            model.name = name;
+            model.origin = origin;
+            model.min = min;
+            model.max = max;
+            model.ppbox = ppbox;
+            logTraceAction('produccion', `Catálogo · Editado`, `Actualizado modelo ${sku}`, `Nombre: ${name}\nRangos Tallas: ${min}-${max}`);
+        }
+    }
+
+    saveAppState(state);
+    renderCatalog();
+    renderHomeStats();
+    populateEntryModels();
+
+    showSnackbar(editingNewModel ? '✅ Modelo creado con éxito' : '💾 Cambios guardados con éxito', 'success');
+    
+    setTimeout(() => {
+        showScreen('catalog');
+    }, 800);
+}
+
+function deleteModel(sku) {
+    if (confirm(`¿Está seguro de que desea eliminar el modelo ${sku} del catálogo?`)) {
+        state.models = state.models.filter(m => m.sku !== sku);
+        saveAppState(state);
+        
+        logTraceAction('baja', 'Catálogo · Eliminado', `Eliminado modelo ${sku} del sistema`, `El modelo fue dado de baja digital.`);
+        renderCatalog();
+        renderHomeStats();
+        populateEntryModels();
+
+        showSnackbar(`🗑 Modelo ${sku} eliminado`, 'success');
+        showScreen('catalog');
+    }
+}
+
+// ═══ REFILL BOX MODULE ═══
+function renderRefillScreen() {
+    const list = document.getElementById('refill-children-container');
+    if (!list) return;
+
+    list.innerHTML = '';
+    
+    state.refillPares.forEach(pair => {
+        const item = `
+            <div class="child-item">
+                <span style="font-size:0.8125rem;font-weight:500;">${pair}</span>
+                <button class="child-remove" onclick="removeRefillPairElement(this, '${pair}')">✕</button>
+            </div>
+        `;
+        list.insertAdjacentHTML('beforeend', item);
+    });
+
+    // Update progress calculation
+    const totalPares = 5 + state.refillPares.length;
+    const progressFill = document.getElementById('refill-progress-fill');
+    if (progressFill) progressFill.style.width = ((totalPares / 8) * 100) + '%';
+
+    const statusText = document.getElementById('refill-status-text');
+    if (statusText) {
+        const missing = Math.max(0, 8 - totalPares);
+        if (missing === 0) {
+            statusText.textContent = `Caja Completa. Tiene 8 de 8 pares.`;
+            statusText.style.color = 'var(--dispatch)';
+        } else {
+            statusText.textContent = `Tiene ${totalPares} de 8 pares. Faltan ${missing}.`;
+            statusText.style.color = 'var(--warning)';
+        }
+    }
+
+    const addedText = document.getElementById('refill-added-text');
+    if (addedText) {
+        addedText.textContent = `Pares a agregar: ${state.refillPares.length} → Total: ${totalPares}/8`;
+    }
+
+    const confirmBtn = document.getElementById('refill-btn-confirm');
+    if (confirmBtn) {
+        confirmBtn.textContent = `✅ CONFIRMAR RELLENADO (${state.refillPares.length} pares)`;
+        confirmBtn.disabled = state.refillPares.length === 0;
+    }
+}
+
+function addRefillPair() {
+    const input = document.getElementById('refill-add-uuid');
+    const uuid = input.value.trim().toUpperCase();
+
+    if (!uuid) {
+        showSnackbar('⚠️ Ingrese un UUID válido', 'warning');
+        return;
+    }
+
+    if (state.refillPares.includes(uuid)) {
+        showSnackbar('❌ Ese par ya está en la lista de rellenado', 'error');
+        return;
+    }
+
+    if (state.refillPares.length + 5 >= 8) {
+        showSnackbar('❌ La caja master ya está al límite de su capacidad (8 pares)', 'error');
+        return;
+    }
+
+    state.refillPares.push(uuid);
+    saveAppState(state);
+    input.value = '';
+    renderRefillScreen();
+    showSnackbar('✅ Par añadido al rellenado', 'success');
+}
+
+function removeRefillPairElement(btn, uuid) {
+    state.refillPares = state.refillPares.filter(p => p !== uuid);
+    saveAppState(state);
+    renderRefillScreen();
+    showSnackbar('🗑 Par retirado de la lista', 'info');
+}
+
+function confirmRefill() {
+    const count = state.refillPares.length;
+    if (count === 0) return;
+
+    state.stats.stock += count;
+    const finalTotal = 5 + count;
+    
+    if (finalTotal === 8) {
+        // If master box reaches max capacity, register it as completed master box
+        state.stats.cajasMaster += 1;
+    }
+
+    const detailPares = state.refillPares.join(', ');
+    state.refillPares = []; // Clear
+    saveAppState(state);
+
+    logTraceAction('refill', 'Caja rellenada · FS-MB-2026A-42-04', `Añadidos ${count} par(es). Ahora: ${finalTotal}/8`, `Añadidos individualmente: ${detailPares}\nCaja cerrada correctamente.`);
+    
+    renderHomeStats();
+    renderRefillScreen();
+    showSnackbar('📦 Rellenado completado y registrado', 'success');
+    
+    setTimeout(() => {
+        showScreen('home');
+    }, 800);
+}
+
+// ═══ HIGH-TECH RFID BURST SCANNER SIMULATOR ═══
+let rfidInterval = null;
+let rfidScanMode = 'standby';
+
+function openRFIDScanner(mode) {
+    rfidScanMode = mode; // 'standby' or 'calidad'
+    
+    const title = document.getElementById('rfid-modal-title');
+    const desc = document.getElementById('rfid-modal-desc');
+    const icon = document.getElementById('rfid-modal-icon');
+    const startBtn = document.getElementById('btn-start-rfid');
+    
+    if (mode === 'standby') {
+        if (title) title.textContent = 'RFID Burst Scanner (Pre-despacho)';
+        if (desc) desc.textContent = 'Acerque el capturador a la zona de predespacho para escanear de forma inalámbrica.';
+        if (icon) { icon.textContent = '📡'; icon.style.color = 'var(--amber)'; }
+        if (startBtn) startBtn.className = 'hub-btn filled amber';
+    } else {
+        if (title) title.textContent = 'RFID Burst Scanner (Bajas Calidad)';
+        if (desc) desc.textContent = 'Registre fallas masivas de calidad escaneando tags en la zona de cuarentena.';
+        if (icon) { icon.textContent = '⊖'; icon.style.color = 'var(--purple)'; }
+        if (startBtn) startBtn.className = 'hub-btn filled purple';
+    }
+
+    // Reset elements
+    document.getElementById('rfid-scanning-visual').style.display = 'none';
+    document.getElementById('rfid-tags-list').style.display = 'none';
+    document.getElementById('rfid-counter').textContent = '0';
+    document.getElementById('rfid-modal-actions').style.display = 'flex';
+
+    document.getElementById('modal-rfid-scanner').classList.add('show');
+}
+
+function startRFIDScan() {
+    const desc = document.getElementById('rfid-modal-desc');
+    const actions = document.getElementById('rfid-modal-actions');
+    const visual = document.getElementById('rfid-scanning-visual');
+    const list = document.getElementById('rfid-tags-list');
+    const counter = document.getElementById('rfid-counter');
+
+    if (desc) desc.textContent = 'Escanando antenas RFID a frecuencias ultra altas...';
+    if (actions) actions.style.display = 'none';
+    if (visual) visual.style.display = 'block';
+    if (list) list.style.display = 'none';
+
+    let count = 0;
+    const limit = rfidScanMode === 'standby' ? 12 : 5; // Simulates tags detected
+    const generatedTags = [];
+
+    // Generates simulated unique RFID codes
+    for (let i = 1; i <= limit; i++) {
+        const tail = String(Math.floor(Math.random()*900+100));
+        const prefix = rfidScanMode === 'standby' ? 'FS-2026A-42-' : 'FS-2026B-40-';
+        generatedTags.push(prefix + tail);
+    }
+
+    // Real-time ticking simulation
+    rfidInterval = setInterval(() => {
+        count++;
+        if (counter) counter.textContent = count;
+        
+        // play simulated audit beep (visual)
+        showSnackbar(`📡 Tag detectado: ${generatedTags[count-1]}`, 'info');
+
+        if (count >= limit) {
+            clearInterval(rfidInterval);
+            finishRFIDScan(generatedTags);
+        }
+    }, 400);
+}
+
+function finishRFIDScan(tags) {
+    const desc = document.getElementById('rfid-modal-desc');
+    const visual = document.getElementById('rfid-scanning-visual');
+    const list = document.getElementById('rfid-tags-list');
+    
+    if (desc) desc.textContent = `Escaneo finalizado. Detectados ${tags.length} tags válidos.`;
+    if (visual) visual.style.display = 'none';
+    if (list) {
+        list.style.display = 'block';
+        list.innerHTML = `<div style="font-size:0.75rem;font-weight:700;margin-bottom:8px;color:var(--primary-container);">REGISTRO RFID CAPTURADO:</div>`;
+        tags.forEach(tag => {
+            list.innerHTML += `
+                <div style="display:flex;justify-content:space-between;padding:6px;background:rgba(255,255,255,0.03);border-radius:4px;font-size:0.75rem;margin-bottom:2px;font-family:monospace;">
+                    <span>✓ ${tag}</span>
+                    <span style="color:var(--tertiary);">ONLINE</span>
+                </div>
+            `;
+        });
+    }
+
+    // Dynamic database commit based on mode
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
+
+    if (rfidScanMode === 'standby') {
+        tags.forEach(tag => {
+            if (!state.dispatchItems.some(i => i.uuid === tag)) {
+                state.dispatchItems.unshift({
+                    uuid: tag,
+                    model: 'FS300CMFFPBL',
+                    size: '42',
+                    box: 'RFID-MB-' + Math.floor(Math.random()*90+10),
+                    origin: 'FS',
+                    checked: false
+                });
+            }
+        });
+        state.stats.standby += tags.length;
+        saveAppState(state);
+        
+        logTraceAction('standby', 'Escaneo Masivo Ráfaga RFID', `Registrados ${tags.length} pares en pre-despacho`, `Capturados vía ráfaga inalámbrica UHF:\n` + tags.join('\n'));
+        showSnackbar(`⚡ ${tags.length} tags añadidos a pre-despacho`, 'success');
+    } else {
+        // Calidad / Bajas
+        state.stats.stock = Math.max(0, state.stats.stock - tags.length);
+        saveAppState(state);
+
+        logTraceAction('baja', 'Baja Masiva Calidad (RFID)', `Retirados ${tags.length} pares con defectos de costura`, `Pares en cuarentena detectados por ráfaga UHF:\n` + tags.join('\n'));
+        showSnackbar(`⊖ ${tags.length} calzados retirados por fallas`, 'warning');
+    }
+
+    // Modal action bar rewrite for confirmation
+    const modalBox = document.querySelector('#modal-rfid-scanner .modal-box');
+    const actionsWrapper = document.createElement('div');
+    actionsWrapper.id = 'rfid-completion-actions';
+    actionsWrapper.style.marginTop = '14px';
+    actionsWrapper.innerHTML = `
+        <button class="action-btn green" onclick="closeRFIDScanner()">Aceptar y Cerrar</button>
+    `;
+    modalBox.appendChild(actionsWrapper);
+
+    renderHomeStats();
+    renderDispatchList();
+}
+
+function closeRFIDScanner() {
+    clearInterval(rfidInterval);
+    document.getElementById('modal-rfid-scanner').classList.remove('show');
+    // Cleans custom completion actions
+    const complActions = document.getElementById('rfid-completion-actions');
+    if (complActions) complActions.remove();
+}
+
+// ═══ CALIDAD MANUAL ACTIONS ═══
+function openCalidadManual() {
+    document.getElementById('calidad-manual-uuid').value = '';
+    document.getElementById('calidad-manual-details').value = '';
+    document.getElementById('modal-calidad-manual').classList.add('show');
+}
+
+function confirmCalidadBajaManual() {
+    const uuid = document.getElementById('calidad-manual-uuid').value.trim().toUpperCase();
+    const reason = document.getElementById('calidad-manual-reason').value;
+    const details = document.getElementById('calidad-manual-details').value.trim() || 'Sin detalles';
+
+    if (!uuid) {
+        showSnackbar('⚠️ Ingrese el UUID del calzado defectuoso', 'warning');
+        return;
+    }
+
+    state.stats.stock = Math.max(0, state.stats.stock - 1);
+    saveAppState(state);
+
+    logTraceAction('baja', `Baja por Calidad · ${uuid}`, `Dado de baja manual por ${reason}`, `UUID: ${uuid}\nMotivo: ${reason}\nDetalles: ${details}`);
+    
+    document.getElementById('modal-calidad-manual').classList.remove('show');
+    renderHomeStats();
+    showSnackbar('⊖ Baja por calidad registrada correctamente', 'success');
+
+    setTimeout(() => {
+        showScreen('trace');
+    }, 800);
+}
+
+// ═══ MUESTRAS LOGIC ═══
+function renderMuestras() {
+    const list = document.querySelector('#screen-muestras .screen-body');
+    if (!list) return;
+
+    // Clear all children except FAB
+    const cards = list.querySelectorAll('.muestra-card');
+    cards.forEach(card => card.remove());
+
+    const fab = list.querySelector('.fab');
+
+    state.muestras.forEach((m, index) => {
+        const isSold = m.status === 'vendida';
+        const badgeText = isSold ? 'VENDIDA' : 'MUESTRA';
+        const badgeStyle = isSold ? 'background:rgba(255,149,0,0.12); color:var(--warning);' : '';
+        
+        let actionsHTML = `
+            <div class="muestra-actions">
+                <button class="muestra-btn outline-green" onclick="returnMuestra(${index})">↩ Retornar</button>
+                <button class="muestra-btn filled-orange" onclick="keepMuestra(${index})">🛒 Se quedó</button>
+            </div>
+        `;
+        if (isSold) {
+            actionsHTML = `<div style="text-align:center;color:var(--warning);font-size:0.75rem;font-weight:600;padding:6px 0;">🛒 Cliente se quedó con el par</div>`;
+        }
+
+        const cardHTML = `
+            <div class="muestra-card animate-in">
+                <div class="muestra-header">
+                    <div>
+                        <div style="font-size:0.875rem;font-weight:700;">${m.uuid}</div>
+                        <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">${m.model} · Talla ${m.size}</div>
+                        <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:2px;opacity:0.4;">Desde: ${m.date}</div>
+                    </div>
+                    <span class="muestra-badge" style="${badgeStyle}">${badgeText}</span>
+                </div>
+                ${actionsHTML}
+            </div>
+        `;
+        
+        list.insertBefore(document.createRange().createContextualFragment(cardHTML), fab);
+    });
+}
+
+function returnMuestra(index) {
+    const m = state.muestras[index];
+    state.stats.stock += 1;
+    state.muestras = state.muestras.filter((_, i) => i !== index);
+    saveAppState(state);
+
+    logTraceAction('muestra', `Muestra Retornada · ${m.uuid}`, `Reingreso al stock general de muestras`, `Modelo: ${m.model} T${m.size}\nCliente: ${m.client}`);
+    
+    renderHomeStats();
+    renderMuestras();
+    showSnackbar('↩ Calzado retornado al stock general', 'success');
+}
+
+function keepMuestra(index) {
+    const m = state.muestras[index];
+    m.status = 'vendida';
+    saveAppState(state);
+
+    logTraceAction('muestra', `Muestra Vendida · ${m.uuid}`, `El cliente decidió adquirir el calzado`, `Modelo: ${m.model} T${m.size}\nCliente: ${m.client}`);
+    
+    renderMuestras();
+    showSnackbar('🛒 Venta de muestra registrada correctamente', 'warning');
+}
+
+function openMuestraScanner() {
+    document.getElementById('muestra-scan-uuid').value = '';
+    document.getElementById('muestra-scan-result').style.display = 'none';
+    if (document.getElementById('muestra-client')) document.getElementById('muestra-client').value = '';
+    if (document.getElementById('muestra-obs')) document.getElementById('muestra-obs').value = '';
+    document.getElementById('modal-muestra-scanner').classList.add('show');
+}
+
+function searchMuestraUUID() {
+    const uuid = document.getElementById('muestra-scan-uuid').value.trim().toUpperCase();
+    if (!uuid) { showSnackbar('⚠️ Ingrese un UUID para buscar', 'warning'); return; }
+    const result = document.getElementById('muestra-scan-result');
+    document.getElementById('muestra-result-title').textContent = uuid;
+    
+    // Auto-detect model info dynamically using robust helper
+    const { model, size } = parseUUIDToModelAndSize(uuid);
+    
+    document.getElementById('muestra-result-detail').textContent = `${model} · Talla ${size} · Lote 2026A`;
+    result.style.display = 'block';
+    result.classList.add('animate-in');
+}
+
+function confirmNewMuestra() {
+    const client = document.getElementById('muestra-client').value.trim();
+    if (!client) { showSnackbar('⚠️ El campo Cliente es obligatorio', 'warning'); return; }
+    
+    const uuid = document.getElementById('muestra-scan-uuid').value.trim().toUpperCase();
+    const obs = document.getElementById('muestra-obs').value.trim() || 'Sin detalles';
+
+    const { model, size } = parseUUIDToModelAndSize(uuid);
+
+    state.stats.stock = Math.max(0, state.stats.stock - 1);
+    
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-VE') + ' ' + now.toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'});
+    
+    state.muestras.push({
+        uuid: uuid,
+        model: model,
+        size: size,
+        date: dateStr,
+        status: 'muestra',
+        client: client
+    });
+
+    saveAppState(state);
+    
+    logTraceAction('muestra', `Muestra Entregada · ${uuid}`, `Entrega de calzado muestra a ${client}`, `Modelo: ${model}\nObservación: ${obs}`);
+    
+    document.getElementById('modal-muestra-scanner').classList.remove('show');
+    renderHomeStats();
+    renderMuestras();
+    showSnackbar('✅ Muestra registrada exitosamente', 'success');
+}
+
+// ═══ SNACKBAR SYSTEM ═══
+function showSnackbar(message, type = 'info') {
+    let snackbar = document.getElementById('snackbar');
+    if (!snackbar) {
+        snackbar = document.createElement('div');
+        snackbar.id = 'snackbar';
+        document.body.appendChild(snackbar);
+    }
+    snackbar.textContent = message;
+    snackbar.className = `snackbar show ${type}`;
+    clearTimeout(snackbar._timeout);
+    snackbar._timeout = setTimeout(() => dismissSnackbar(), 3000);
+}
+
+function dismissSnackbar() {
+    const snackbar = document.getElementById('snackbar');
+    if (snackbar) snackbar.classList.remove('show');
+}
+
+// ═══ ACTION BUTTON FEEDBACK (CLEANED EXCLUSIONS) ═══
 document.querySelectorAll('.action-btn.primary').forEach(btn => {
-    if (btn.id === 'btn-entry-register' || btn.id === 'btn-login') return; // These have their own flows
+    // Exclude buttons with custom interactive flows
+    if (['btn-entry-register', 'btn-login', 'btn-save-model', 'btn-create-pedido'].includes(btn.id)) return;
+    
     btn.addEventListener('click', () => {
         const orig = btn.innerHTML;
         btn.innerHTML = '✅ ¡GUARDADO CON ÉXITO!';
@@ -1810,15 +3458,17 @@ document.querySelectorAll('.action-btn.primary').forEach(btn => {
     });
 });
 
-// ═══ CLOSE MODALS ON ESC ═══
+// ═══ ESC MODAL HANDLING ═══
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         dismissSnackbar();
-        document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+        document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('remove'));
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+        closeRFIDScanner();
     }
 });
 
-// ═══ PRINTER CONFIG ═══
+// ═══ SIMULATED PRINTER FLOWS ═══
 function testPrinterConnection() {
     const btn = document.getElementById('btn-test-printer');
     const banner = document.getElementById('printer-status-banner');
@@ -1829,7 +3479,6 @@ function testPrinterConnection() {
     const port = document.getElementById('printer-port').value;
     const protocol = document.getElementById('printer-protocol').value.toLowerCase();
 
-    // Phase 1: Testing...
     btn.innerHTML = '<span class="printer-spinner"></span> PROBANDO...';
     btn.disabled = true;
     btn.classList.add('testing');
@@ -1838,7 +3487,6 @@ function testPrinterConnection() {
     text.textContent = 'Probando Conexión...';
     sub.textContent = `Conectando a ${protocol}://${ip}:${port}/imprimir`;
 
-    // Phase 2: Success (simulated after 1.5s)
     setTimeout(() => {
         banner.className = 'printer-status-banner connected';
         icon.textContent = '✅';
@@ -1848,7 +3496,6 @@ function testPrinterConnection() {
         btn.classList.remove('testing');
         btn.classList.add('success');
 
-        // Show info card
         const infoCard = document.getElementById('printer-info-card');
         infoCard.style.display = 'block';
         infoCard.classList.add('animate-in');
@@ -1873,161 +3520,22 @@ function savePrinterConfig() {
     }
     showSnackbar('✅ Configuración de impresora guardada', 'success');
 
-    // Update settings screen description
     const settingsDesc = document.querySelector('.settings-item[onclick*="printer-config"] .settings-desc');
     if (settingsDesc) settingsDesc.textContent = `${ip}:${port} · TSC TE200`;
 }
 
-// ═══ SNACKBAR SYSTEM ═══
-function showSnackbar(message, type = 'info') {
-    let snackbar = document.getElementById('snackbar');
-    if (!snackbar) {
-        snackbar = document.createElement('div');
-        snackbar.id = 'snackbar';
-        document.body.appendChild(snackbar);
-    }
-    snackbar.textContent = message;
-    snackbar.className = `snackbar show ${type}`;
-    clearTimeout(snackbar._timeout);
-    snackbar._timeout = setTimeout(() => dismissSnackbar(), 3000);
-}
-
-function dismissSnackbar() {
-    const snackbar = document.getElementById('snackbar');
-    if (snackbar) snackbar.classList.remove('show');
-}
-
-// ═══ ENTRY REGISTRATION FLOW ═══
-function handleEntryRegister() {
-    const rack = document.getElementById('entry-rack');
-    const summary = document.getElementById('entry-confirm-summary');
-    summary.innerHTML = `
-        <div class="confirm-row"><span class="confirm-label">Modelo:</span> FS300CMFFPBL</div>
-        <div class="confirm-row"><span class="confirm-label">Talla:</span> 42</div>
-        <div class="confirm-row"><span class="confirm-label">Lote:</span> 2026A</div>
-        <div class="confirm-row"><span class="confirm-label">Cantidad:</span> 25 pares</div>
-        <div class="confirm-row"><span class="confirm-label">Ubicación:</span> ${rack.value}</div>
-        <div class="confirm-row"><span class="confirm-label">Cajas Master:</span> 3 completas + 1 par suelto</div>
-    `;
-    document.getElementById('modal-entry-confirm').classList.add('show');
-}
-
-function confirmEntryRegister() {
-    document.getElementById('modal-entry-confirm').classList.remove('show');
-    const rack = document.getElementById('entry-rack');
-    const banner = document.getElementById('entry-success-banner');
-    const detail = document.getElementById('success-detail');
-    detail.innerHTML = `
-        <div>📦 3 Cajas Master + 1 par suelto registrados</div>
-        <div>📍 Ubicación: ${rack.value}</div>
-        <div>🖨 Etiquetas enviadas a impresora</div>
-        <div style="margin-top:8px;font-size:0.6875rem;opacity:0.5;">ID: FS-MB-2026A-42-04...06 + FS-2026A-42-025</div>
-    `;
-    banner.style.display = 'block';
-    banner.classList.add('animate-in');
-    document.getElementById('btn-entry-register').style.display = 'none';
-    showSnackbar('✅ Registro exitoso — Imprimiendo etiquetas', 'success');
-}
-
-function dismissEntrySuccess() {
-    document.getElementById('entry-success-banner').style.display = 'none';
-    document.getElementById('btn-entry-register').style.display = '';
-}
-
-// ═══ MUESTRAS SCANNER ═══
-function openMuestraScanner() {
-    document.getElementById('muestra-scan-uuid').value = '';
-    document.getElementById('muestra-scan-result').style.display = 'none';
-    if (document.getElementById('muestra-client')) document.getElementById('muestra-client').value = '';
-    if (document.getElementById('muestra-obs')) document.getElementById('muestra-obs').value = '';
-    document.getElementById('modal-muestra-scanner').classList.add('show');
-}
-
-function searchMuestraUUID() {
-    const uuid = document.getElementById('muestra-scan-uuid').value.trim();
-    if (!uuid) { showSnackbar('⚠️ Ingrese un UUID para buscar', 'warning'); return; }
-    const result = document.getElementById('muestra-scan-result');
-    document.getElementById('muestra-result-title').textContent = uuid;
-    document.getElementById('muestra-result-detail').textContent = 'FS300CMFFPBL · Talla 42 · Lote 2026A';
-    result.style.display = 'block';
-    result.classList.add('animate-in');
-}
-
-function confirmNewMuestra() {
-    const client = document.getElementById('muestra-client').value.trim();
-    if (!client) { showSnackbar('⚠️ El campo Cliente es obligatorio', 'warning'); return; }
-    const uuid = document.getElementById('muestra-scan-uuid').value.trim();
-    document.getElementById('modal-muestra-scanner').classList.remove('show');
-    showSnackbar('✅ Muestra registrada exitosamente', 'success');
-    const container = document.querySelector('#screen-muestras .screen-body');
-    const fab = container.querySelector('.fab');
-    const card = document.createElement('div');
-    card.className = 'muestra-card animate-in';
-    const now = new Date();
-    card.innerHTML = `
-        <div class="muestra-header"><div>
-            <div style="font-size:0.875rem;font-weight:700;">${uuid}</div>
-            <div style="font-size:0.75rem;color:var(--on-surface-variant);opacity:0.6;">FS300CMFFPBL · Talla 42</div>
-            <div style="font-size:0.6875rem;color:var(--on-surface-variant);margin-top:2px;opacity:0.4;">Desde: ${now.toLocaleDateString('es-VE')} ${now.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'})}</div>
-        </div><span class="muestra-badge">MUESTRA</span></div>
-        <div class="muestra-actions">
-            <button class="muestra-btn outline-green">↩ Retornar</button>
-            <button class="muestra-btn filled-orange">🛒 Se quedó</button>
-        </div>
-    `;
-    container.insertBefore(card, fab);
-    // Attach event listeners to new buttons
-    card.querySelector('.muestra-btn.outline-green').addEventListener('click', (e) => {
-        e.stopPropagation();
-        card.style.transition = 'all 0.4s'; card.style.opacity = '0'; card.style.transform = 'translateX(-100%)';
-        setTimeout(() => { card.innerHTML = '<div style="padding:14px;text-align:center;color:var(--dispatch);font-weight:700;font-size:0.875rem;">✅ Retornado al Stock</div>'; card.style.opacity = '1'; card.style.transform = 'translateX(0)'; }, 400);
-    });
-    card.querySelector('.muestra-btn.filled-orange').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const badge = card.querySelector('.muestra-badge');
-        if (badge) { badge.textContent = 'VENDIDA'; badge.style.background = 'rgba(255,149,0,0.12)'; badge.style.color = 'var(--warning)'; }
-        card.querySelector('.muestra-actions').innerHTML = '<div style="text-align:center;color:var(--warning);font-size:0.75rem;font-weight:600;padding:6px 0;">🛒 Cliente se quedó con el par</div>';
-    });
-}
-
-// ═══ LOGOUT ═══
-function confirmLogout() {
-    document.getElementById('modal-logout').classList.remove('show');
-    showScreen('login');
-    showSnackbar('🔒 Sesión cerrada', 'info');
-}
-
-function handleLogin() {
-    const email = document.getElementById('login-email').value;
-    const pass = document.getElementById('login-password').value;
-    if (!email || !pass) { showSnackbar('⚠️ Complete todos los campos', 'warning'); return; }
-    const user = USERS[email];
-    if (!user || user.pass !== pass) { showSnackbar('❌ Credenciales incorrectas', 'error'); return; }
-    currentUser = { name: user.name, role: user.role, email: email };
-    applyUserUI();
-    showScreen('home');
-    showSnackbar('👋 ¡Bienvenido, ' + currentUser.name + '!', 'success');
-}
-
-// ═══ IMAGE UPLOAD ═══
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('catalog-edit-img').src = e.target.result;
-        showSnackbar('✅ Imagen actualizada correctamente', 'success');
-    };
-    reader.readAsDataURL(file);
-}
-
-// ═══ QR HISTORY ═══
+// ═══ QR CODE HISTORY MODULE ═══
 function searchQRByUUID() {
-    const uuid = document.getElementById('qr-search-uuid').value.trim();
+    const uuid = document.getElementById('qr-search-uuid').value.trim().toUpperCase();
     if (!uuid) { showSnackbar('⚠️ Ingrese un UUID para buscar', 'warning'); return; }
     const result = document.getElementById('qr-search-result');
     document.getElementById('qr-result-uuid').textContent = uuid;
-    document.getElementById('qr-result-info').textContent = uuid.includes('MB') ? '📦 Caja Master · 8 pares' : 'FS300CMFFPBL · Talla 42';
+    if (uuid.includes('MB')) {
+        document.getElementById('qr-result-info').textContent = '📦 Caja Master · 8 pares';
+    } else {
+        const { model, size } = parseUUIDToModelAndSize(uuid);
+        document.getElementById('qr-result-info').textContent = `${model} · Talla ${size}`;
+    }
     document.getElementById('qr-result-date').textContent = 'Creado: ' + new Date().toLocaleDateString('es-VE') + ' ' + new Date().toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'});
     result.style.display = 'block';
     result.classList.add('animate-in');
@@ -2057,84 +3565,30 @@ function toggleDayGroup(header) {
     if (icon) icon.textContent = group.classList.contains('open') ? '▴' : '▾';
 }
 
-// ═══ CATALOG MODEL MANAGEMENT ═══
-let editingNewModel = false;
+// ═══ IMAGE UPLOADER FOR CATALOG ═══
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('catalog-edit-img').src = e.target.result;
+        
+        // Updates image in persistent models list too!
+        const sku = document.getElementById('edit-model-sku').value;
+        const model = state.models.find(m => m.sku === sku);
+        if (model) {
+            model.image = e.target.result;
+            saveAppState(state);
+            renderCatalog();
+        }
 
-function openNewModel() {
-    editingNewModel = true;
-    document.getElementById('catalog-edit-title').textContent = 'Nuevo Modelo';
-    document.getElementById('catalog-edit-sub').textContent = 'Agregar al catálogo';
-    document.getElementById('catalog-edit-sub').style.color = 'var(--dispatch)';
-    document.getElementById('edit-model-sku').value = '';
-    document.getElementById('edit-model-name').value = '';
-    document.getElementById('edit-model-origin').selectedIndex = 0;
-    document.getElementById('edit-model-min').value = '36';
-    document.getElementById('edit-model-max').value = '46';
-    document.getElementById('edit-model-ppbox').value = '8';
-    const img = document.getElementById('catalog-edit-img');
-    if (img) img.src = '';
-    const zone = document.querySelector('.img-upload-zone');
-    if (zone) zone.classList.remove('has-image');
-    document.getElementById('btn-save-model').innerHTML = '✅ CREAR MODELO';
-    document.getElementById('btn-delete-model').style.display = 'none';
-    showScreen('catalog-edit');
+        showSnackbar('✅ Imagen cargada correctamente', 'success');
+    };
+    reader.readAsDataURL(file);
 }
 
-function openEditModel(sku, name, origin, min, max, ppbox) {
-    editingNewModel = false;
-    document.getElementById('catalog-edit-title').textContent = 'Editar Modelo';
-    document.getElementById('catalog-edit-sub').textContent = sku;
-    document.getElementById('catalog-edit-sub').style.color = '';
-    document.getElementById('edit-model-sku').value = sku;
-    document.getElementById('edit-model-name').value = name;
-    document.getElementById('edit-model-origin').value = origin;
-    document.getElementById('edit-model-min').value = min;
-    document.getElementById('edit-model-max').value = max;
-    document.getElementById('edit-model-ppbox').value = ppbox;
-    document.getElementById('btn-save-model').innerHTML = '💾 GUARDAR CAMBIOS';
-    document.getElementById('btn-delete-model').style.display = '';
-    showScreen('catalog-edit');
-}
-
-function saveModel() {
-    const sku = document.getElementById('edit-model-sku').value.trim();
-    const name = document.getElementById('edit-model-name').value.trim();
-    if (!sku || !name) { showSnackbar('⚠️ Complete SKU y Nombre', 'warning'); return; }
-    const btn = document.getElementById('btn-save-model');
-    const orig = btn.innerHTML;
-    btn.innerHTML = '✅ ¡GUARDADO!';
-    btn.style.background = 'var(--dispatch)';
-    showSnackbar(editingNewModel ? '✅ Modelo ' + sku + ' creado' : '💾 Modelo ' + sku + ' actualizado', 'success');
-    setTimeout(() => {
-        btn.innerHTML = orig;
-        btn.style.background = '';
-        showScreen('catalog');
-    }, 1500);
-}
-
-// ═══ PEDIDO DE VENTA SYSTEM ═══
-const pedidos = [
-    { id:'#4521', client:'Distribuidora Norte', status:'pendiente', creator:'Carlos Martínez',
-      date:'05/05/2026 10:30', obs:'Pedido urgente',
-      lines:[{model:'FS300CMFFFPBL',size:'42',qty:5,scanned:0},{model:'FS300CMFFFPBL',size:'43',qty:3,scanned:0}],
-      scannedPairs:[] },
-    { id:'#4520', client:'Calzados Express', status:'en-proceso', creator:'Carlos Martínez',
-      date:'04/05/2026 14:20', obs:'',
-      lines:[{model:'FS302CMN',size:'40',qty:6,scanned:4}],
-      scannedPairs:[
-        {uuid:'FS-2026B-40-001',time:'14:25',user:'José García'},
-        {uuid:'FS-2026B-40-002',time:'14:26',user:'José García'},
-        {uuid:'FS-2026B-40-003',time:'14:28',user:'José García'},
-        {uuid:'FS-2026B-40-004',time:'14:30',user:'José García'}
-      ] },
-    { id:'#4519', client:'Tienda Central', status:'completo', creator:'Carlos Martínez',
-      date:'03/05/2026 09:00', obs:'',
-      lines:[{model:'FS400BK',size:'44',qty:2,scanned:2}],
-      scannedPairs:[
-        {uuid:'FS-2026A-44-001',time:'09:15',user:'José García'},
-        {uuid:'FS-2026A-44-002',time:'09:17',user:'José García'}
-      ] }
-];
+// ═══ PEDIDOS DE VENTA CORE MODULE ═══
+const pedidos = state.pedidos;
 let activePedidoIdx = 0;
 
 function openPedidoDetail(idx) {
@@ -2143,11 +3597,11 @@ function openPedidoDetail(idx) {
     document.getElementById('pedido-detail-title').textContent = 'Pedido ' + p.id;
     document.getElementById('pedido-detail-client').textContent = p.client;
     document.getElementById('pedido-detail-creator').textContent = p.creator;
-    // Status
+    
     const st = document.getElementById('pedido-detail-status');
     st.textContent = p.status.replace('-',' ').toUpperCase();
     st.className = 'pedido-status ' + p.status;
-    // Lines
+    
     const linesEl = document.getElementById('pedido-detail-lines');
     linesEl.innerHTML = '';
     p.lines.forEach((ln, i) => {
@@ -2159,16 +3613,20 @@ function openPedidoDetail(idx) {
             <div class="pedido-line-progress" style="width:80px;"><div class="pedido-line-progress-fill ${cls}" id="line-prog-${i}" style="width:${pct}%"></div></div>
         </div>`;
     });
-    // Overall progress
+    
     updatePedidoProgress(p);
-    // Scanned pairs
     renderScannedPairs(p);
-    // Show/hide scan input and completion
+    
     const totalQty = p.lines.reduce((s,l)=>s+l.qty,0);
     const totalSc = p.lines.reduce((s,l)=>s+l.scanned,0);
     const isComplete = totalSc >= totalQty;
-    document.querySelector('#screen-pedido-detail .scan-input-group').style.display = isComplete ? 'none' : '';
-    document.getElementById('pedido-completion-area').style.display = isComplete ? 'block' : 'none';
+    
+    const scanGroup = document.querySelector('#screen-pedido-detail .scan-input-group');
+    if (scanGroup) scanGroup.style.display = isComplete ? 'none' : '';
+    
+    const complArea = document.getElementById('pedido-completion-area');
+    if (complArea) complArea.style.display = isComplete ? 'block' : 'none';
+    
     document.getElementById('scan-result-area').innerHTML = '';
     document.getElementById('scan-pedido-uuid').value = '';
     showScreen('pedido-detail');
@@ -2177,12 +3635,17 @@ function openPedidoDetail(idx) {
 function updatePedidoProgress(p) {
     const totalQty = p.lines.reduce((s,l)=>s+l.qty,0);
     const totalSc = p.lines.reduce((s,l)=>s+l.scanned,0);
-    document.getElementById('pedido-detail-progress-text').textContent = totalSc + '/' + totalQty + ' pares';
-    document.getElementById('pedido-detail-progress-bar').style.width = (totalQty>0?Math.round((totalSc/totalQty)*100):0)+'%';
+    
+    const pText = document.querySelector('.pedido-detail-progress-value');
+    if (pText) pText.textContent = totalSc + '/' + totalQty + ' pares';
+    
+    const pBar = document.getElementById('pedido-detail-progress-bar');
+    if (pBar) pBar.style.width = (totalQty>0?Math.round((totalSc/totalQty)*100):0)+'%';
 }
 
 function renderScannedPairs(p) {
     const list = document.getElementById('scanned-pairs-list');
+    if (!list) return;
     list.innerHTML = '';
     document.getElementById('scanned-title').textContent = 'Pares Escaneados (' + p.scannedPairs.length + ')';
     p.scannedPairs.forEach(sp => {
@@ -2194,170 +3657,87 @@ function renderScannedPairs(p) {
     });
 }
 
-// ═══ SCAN VALIDATION ENGINE ═══
 function scanForPedido() {
-    const uuid = document.getElementById('scan-pedido-uuid').value.trim();
+    const uuid = document.getElementById('scan-pedido-uuid').value.trim().toUpperCase();
     if (!uuid) { showSnackbar('⚠️ Ingrese un UUID', 'warning'); return; }
+    
     const p = pedidos[activePedidoIdx];
     const area = document.getElementById('scan-result-area');
-    // Parse UUID to extract model info — format: PREFIX-LOTE-TALLA-SEQ
-    const parts = uuid.split('-');
-    let scannedModel = '', scannedSize = '';
-    if (parts.length >= 3) {
-        scannedSize = parts[2];
-        // Determine model from UUID prefix pattern
-        if (uuid.startsWith('FS-2026A')) scannedModel = 'FS300CMFFFPBL';
-        else if (uuid.startsWith('FS-2026B')) scannedModel = 'FS302CMN';
-        else if (uuid.startsWith('SF-')) scannedModel = 'SF200LT';
-        else scannedModel = 'FS400BK';
-    }
-    // For demo: also accept direct model-talla format typed manually
-    if (!scannedModel && uuid.includes('T')) {
-        const m = uuid.match(/^(\w+)\s*T(\d+)/i);
-        if (m) { scannedModel = m[1]; scannedSize = m[2]; }
-    }
-    // Find matching line
-    const matchingLine = p.lines.find(l => l.model === scannedModel && l.size === scannedSize);
+    
+    // Parse UUID to extract model info dynamically using robust helper
+    const { model: scannedModel, size: scannedSize } = parseUUIDToModelAndSize(uuid);
+
+    const matchingLine = p.lines.find(l => (l.model === scannedModel || l.model.substring(0,5) === scannedModel.substring(0,5)) && l.size === scannedSize);
+    
     if (!matchingLine) {
-        // Check if model exists but wrong size
-        const modelExists = p.lines.find(l => l.model === scannedModel);
-        if (modelExists) {
-            const expected = p.lines.filter(l=>l.model===scannedModel).map(l=>'T'+l.size).join(', ');
-            area.innerHTML = `<div class="scan-banner error">
-                <div class="scan-banner-icon">❌</div>
-                <div class="scan-banner-text">
-                    <div class="scan-banner-title">Talla ${scannedSize} no coincide</div>
-                    <div class="scan-banner-detail">Se esperaba: ${expected}</div>
-                </div>
-            </div>`;
-        } else {
-            const expected = [...new Set(p.lines.map(l=>l.model))].join(', ');
-            area.innerHTML = `<div class="scan-banner error">
-                <div class="scan-banner-icon">❌</div>
-                <div class="scan-banner-text">
-                    <div class="scan-banner-title">Modelo ${scannedModel||'desconocido'} NO corresponde</div>
-                    <div class="scan-banner-detail">Este pedido requiere: ${expected}</div>
-                </div>
-            </div>`;
-        }
+        area.innerHTML = `<div class="scan-banner error">
+            <div class="scan-banner-icon">❌</div>
+            <div class="scan-banner-text">
+                <div class="scan-banner-title">Calzado no corresponde al pedido</div>
+                <div class="scan-banner-detail">Modelo o talla incorrecta. Revise la lista de líneas requeridas.</div>
+            </div>
+        </div>`;
         showSnackbar('❌ Escaneo rechazado', 'error');
         return;
     }
-    // Check quantity
+
     if (matchingLine.scanned >= matchingLine.qty) {
         area.innerHTML = `<div class="scan-banner warning">
             <div class="scan-banner-icon">⚠️</div>
             <div class="scan-banner-text">
-                <div class="scan-banner-title">Cantidad completa para T${scannedSize}</div>
-                <div class="scan-banner-detail">Ya se escanearon ${matchingLine.qty}/${matchingLine.qty} pares de ${scannedModel} T${scannedSize}</div>
+                <div class="scan-banner-title">Cantidad ya completada</div>
+                <div class="scan-banner-detail">Ya se escanearon todos los calzados requeridos para esta línea.</div>
             </div>
         </div>`;
-        showSnackbar('⚠️ Cantidad ya completa', 'warning');
+        showSnackbar('⚠️ Línea ya completada', 'warning');
         return;
     }
-    // SUCCESS
+
+    // Success scan
     matchingLine.scanned++;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
     p.scannedPairs.unshift({ uuid: uuid, time: timeStr, user: currentUser.name });
+    
     if (p.status === 'pendiente') p.status = 'en-proceso';
+    saveAppState(state);
+
     area.innerHTML = `<div class="scan-banner success">
         <div class="scan-banner-icon">✅</div>
         <div class="scan-banner-text">
-            <div class="scan-banner-title">¡Correcto! ${scannedModel} T${scannedSize}</div>
-            <div class="scan-banner-detail">${matchingLine.scanned}/${matchingLine.qty} pares · Escaneado por ${currentUser.name}</div>
+            <div class="scan-banner-title">¡Escaneo Correcto! T${scannedSize}</div>
+            <div class="scan-banner-detail">${matchingLine.scanned}/${matchingLine.qty} escaneados. Par asignado al pedido.</div>
         </div>
     </div>`;
-    showSnackbar('✅ Par registrado correctamente', 'success');
-    // Update UI
-    const li = p.lines.indexOf(matchingLine);
-    const pct = Math.round((matchingLine.scanned/matchingLine.qty)*100);
-    const cls = matchingLine.scanned >= matchingLine.qty ? 'done' : 'partial';
-    const qEl = document.getElementById('line-qty-'+li);
-    const pEl = document.getElementById('line-prog-'+li);
-    if (qEl) qEl.textContent = matchingLine.scanned+'/'+matchingLine.qty;
-    if (pEl) { pEl.style.width = pct+'%'; pEl.className = 'pedido-line-progress-fill '+cls; }
-    updatePedidoProgress(p);
-    renderScannedPairs(p);
-    document.getElementById('scan-pedido-uuid').value = '';
-    // Check if all complete
-    const totalQty = p.lines.reduce((s,l)=>s+l.qty,0);
-    const totalSc = p.lines.reduce((s,l)=>s+l.scanned,0);
-    if (totalSc >= totalQty) {
-        p.status = 'completo';
-        const st = document.getElementById('pedido-detail-status');
-        st.textContent = 'COMPLETO'; st.className = 'pedido-status completo';
-        document.querySelector('#screen-pedido-detail .scan-input-group').style.display = 'none';
-        document.getElementById('pedido-completion-area').style.display = 'block';
-    }
+    showSnackbar('✅ Par registrado en pedido', 'success');
+
+    openPedidoDetail(activePedidoIdx);
 }
 
 function confirmDelivery() {
     const p = pedidos[activePedidoIdx];
     p.status = 'entregado';
-    const st = document.getElementById('pedido-detail-status');
-    st.textContent = 'ENTREGADO'; st.className = 'pedido-status entregado';
-    document.getElementById('pedido-completion-area').innerHTML = `
-        <div class="completion-banner" style="background:rgba(0,150,136,0.06);">
-            <div class="completion-icon">🚚</div>
-            <div class="completion-title" style="color:var(--teal);">Pedido Entregado</div>
-            <div class="completion-sub">Entrega confirmada por ${currentUser.name}</div>
-        </div>`;
-    showSnackbar('🚚 Entrega confirmada por ' + currentUser.name, 'success');
+    
+    // Decrement physical stock by total pairs in the completed order
+    const totalScanned = p.lines.reduce((s, l) => s + l.scanned, 0);
+    state.stats.stock = Math.max(0, state.stats.stock - totalScanned);
+    
+    saveAppState(state);
+
+    logTraceAction('despacho', `Pedido ${p.id} Entregado`, `Salida final de almacén por despacho de pedido`, `Cliente: ${p.client}\nOperador: ${currentUser.name}\nPares entregados: ${totalScanned}`);
+    openPedidoDetail(activePedidoIdx);
+    renderHomeStats();
+    showSnackbar('🚚 Entrega de pedido confirmada con éxito', 'success');
 }
 
 function registerReturn() {
     const p = pedidos[activePedidoIdx];
     p.status = 'retornado';
-    const st = document.getElementById('pedido-detail-status');
-    st.textContent = 'RETORNADO'; st.className = 'pedido-status retornado';
-    document.getElementById('pedido-completion-area').innerHTML = `
-        <div class="completion-banner" style="background:rgba(255,59,48,0.06);">
-            <div class="completion-icon">↩</div>
-            <div class="completion-title" style="color:var(--error);">Pedido Retornado</div>
-            <div class="completion-sub">Retorno registrado por ${currentUser.name}</div>
-        </div>`;
-    showSnackbar('↩ Retorno registrado por ' + currentUser.name, 'warning');
-}
+    saveAppState(state);
 
-// ═══ PEDIDO CREATE ═══
-let lineCount = 1;
-function addPedidoLine() {
-    const c = document.getElementById('pedido-lines-container');
-    const d = document.createElement('div');
-    d.className = 'line-builder';
-    d.innerHTML = `<select class="input-field" style="padding:10px 8px;font-size:0.75rem;">
-        <option>FS300CMFFFPBL</option><option>FS302CMN</option><option>FS400BK</option><option>SF200LT</option>
-    </select>
-    <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;">
-        <option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option selected>42</option><option>43</option><option>44</option><option>45</option><option>46</option>
-    </select>
-    <input class="input-field" type="number" value="1" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" />
-    <button class="line-remove-btn" onclick="removePedidoLine(this)">✕</button>`;
-    c.appendChild(d);
-    lineCount++;
-    updatePedidoPreview();
-}
-
-function removePedidoLine(btn) {
-    const c = document.getElementById('pedido-lines-container');
-    if (c.children.length <= 1) { showSnackbar('⚠️ Debe haber al menos una línea', 'warning'); return; }
-    btn.closest('.line-builder').remove();
-    updatePedidoPreview();
-}
-
-function updatePedidoPreview() {
-    const lines = document.querySelectorAll('#pedido-lines-container .line-builder');
-    const prev = document.getElementById('pedido-preview-lines');
-    let total = 0; prev.innerHTML = '';
-    lines.forEach(l => {
-        const model = l.querySelectorAll('select')[0].value;
-        const size = l.querySelectorAll('select')[1].value;
-        const qty = parseInt(l.querySelector('input[type=number]').value) || 0;
-        total += qty;
-        prev.innerHTML += `<div class="preview-line green">• ${model} T${size} — ${qty} pares</div>`;
-    });
-    document.getElementById('pedido-preview-total').textContent = 'Total: ' + total + ' pares';
+    logTraceAction('muestra', `Pedido ${p.id} Devuelto`, `Devolución de mercancía a cuarentena`, `Cliente: ${p.client}\nOperador: ${currentUser.name}`);
+    openPedidoDetail(activePedidoIdx);
+    showSnackbar('↩ Devolución del pedido registrada', 'warning');
 }
 
 function confirmCreatePedido() {
@@ -2380,9 +3760,107 @@ function confirmCreatePedido() {
         obs: document.getElementById('new-pedido-obs').value,
         lines: lines, scannedPairs: []
     });
+    saveAppState(state);
+    
+    // Dynamically update UI list immediately
+    renderPedidosList();
+
+    // Reset create order form
+    document.getElementById('new-pedido-num').value = '#45' + Math.floor(Math.random()*90 + 22);
+    document.getElementById('new-pedido-client').value = '';
+    document.getElementById('new-pedido-obs').value = '';
+    const linesContainer = document.getElementById('pedido-lines-container');
+    linesContainer.innerHTML = `<div class="line-builder" data-line-idx="0">
+        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;">
+            ${getModelsDropdownOptionsHTML()}
+        </select>
+        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;" onchange="updatePedidoPreview()">
+            <option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option selected>42</option><option>43</option><option>44</option><option>45</option><option>46</option>
+        </select>
+        <input class="input-field" type="number" value="5" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" oninput="updatePedidoPreview()" />
+        <button class="line-remove-btn" onclick="removePedidoLine(this)">✕</button>
+    </div>`;
+    updatePedidoPreview();
+
     showScreen('pedidos');
     showSnackbar('✅ Pedido ' + num + ' creado por ' + currentUser.name, 'success');
-    // Refresh list would happen here in production; for mockup we just go back
+}
+
+// ═══ DYNAMIC PEDIDO BUILDER ACTIONS ═══
+function addPedidoLine() {
+    const container = document.getElementById('pedido-lines-container');
+    if (!container) return;
+    
+    const idx = container.children.length;
+    const newLine = document.createElement('div');
+    newLine.className = 'line-builder';
+    newLine.setAttribute('data-line-idx', idx);
+    
+    newLine.innerHTML = `
+        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;" onchange="updatePedidoPreview()">
+            ${getModelsDropdownOptionsHTML()}
+        </select>
+        <select class="input-field" style="padding:10px 8px;font-size:0.75rem;max-width:60px;" onchange="updatePedidoPreview()">
+            <option>36</option><option>37</option><option>38</option><option>39</option><option>40</option><option>41</option><option selected>42</option><option>43</option><option>44</option><option>45</option><option>46</option>
+        </select>
+        <input class="input-field" type="number" value="5" min="1" style="padding:10px 8px;font-size:0.75rem;max-width:50px;" oninput="updatePedidoPreview()" />
+        <button class="line-remove-btn" onclick="removePedidoLine(this)">✕</button>
+    `;
+    container.appendChild(newLine);
+    updatePedidoPreview();
+}
+
+function removePedidoLine(btn) {
+    const container = document.getElementById('pedido-lines-container');
+    if (!container) return;
+    
+    if (container.children.length > 1) {
+        btn.parentElement.remove();
+        updatePedidoPreview();
+    } else {
+        showSnackbar('⚠️ Un pedido debe tener al menos una línea', 'warning');
+    }
+}
+
+function updatePedidoPreview() {
+    const previewContainer = document.getElementById('pedido-preview-lines');
+    const totalEl = document.getElementById('pedido-preview-total');
+    if (!previewContainer || !totalEl) return;
+    
+    previewContainer.innerHTML = '';
+    let total = 0;
+    
+    document.querySelectorAll('#pedido-lines-container .line-builder').forEach(l => {
+        const selects = l.querySelectorAll('select');
+        if (selects.length < 2) return;
+        const model = selects[0].value;
+        const size = selects[1].value;
+        const qty = parseInt(l.querySelector('input[type=number]').value) || 0;
+        
+        if (qty > 0) {
+            total += qty;
+            const line = document.createElement('div');
+            line.className = 'preview-line green';
+            line.textContent = `• ${model} T${size} — ${qty} pares`;
+            previewContainer.appendChild(line);
+        }
+    });
+    
+    totalEl.textContent = `Total: ${total} pares`;
+}
+
+// ═══ SYSTEM RESET DATA FLOW ═══
+function resetSystemData() {
+    if (confirm('⚠️ ¿Está seguro de que desea restablecer todo el sistema a sus valores por defecto? Se perderán todos los cambios locales.')) {
+        localStorage.removeItem('puntera_state');
+        state = getAppState();
+        currentUser = state.currentUser;
+        remainderMode = state.remainderMode || 'loose';
+        
+        initializeUI();
+        showScreen('home');
+        showSnackbar('🔄 ¡Sistema restablecido con éxito!', 'success');
+    }
 }
 
 // ═══ SYNC SIMULATION ═══
@@ -2411,6 +3889,467 @@ function simulateSync(btn) {
             btn.disabled = false;
         }, 2000);
     }, 2500);
+}
+
+// ═══════════════ EMPAQUE & QR WAREHOUSE INGESTION CODE ═══════════════
+let empaqueRemainderMode = 'loose';
+let entryMode = 'manual';
+
+function attachEmpaqueBrandToggleListeners() {
+    const fsChip = document.getElementById('empaque-chip-fs');
+    const sfChip = document.getElementById('empaque-chip-sf');
+    if (!fsChip || !sfChip) return;
+
+    fsChip.addEventListener('click', () => {
+        state.activeBrand = 'Foot Safe';
+        saveAppState(state);
+        updateEmpaqueBrandUI();
+    });
+
+    sfChip.addEventListener('click', () => {
+        state.activeBrand = 'Safety';
+        saveAppState(state);
+        updateEmpaqueBrandUI();
+    });
+}
+
+function updateEmpaqueBrandUI() {
+    const fsChip = document.getElementById('empaque-chip-fs');
+    const sfChip = document.getElementById('empaque-chip-sf');
+    if (!fsChip || !sfChip) return;
+
+    if (state.activeBrand === 'Safety') {
+        sfChip.className = 'origin-chip sf-active';
+        sfChip.textContent = '✓ Safety';
+        fsChip.className = 'origin-chip sf';
+        fsChip.textContent = 'Foot Safe';
+    } else {
+        fsChip.className = 'origin-chip fs';
+        fsChip.textContent = '✓ Foot Safe';
+        sfChip.className = 'origin-chip sf';
+        sfChip.textContent = 'Safety';
+    }
+    populateEmpaqueModels();
+}
+
+function populateEmpaqueModels() {
+    const select = document.getElementById('empaque-model');
+    if (!select) return;
+
+    select.innerHTML = '';
+    const brandOrigin = state.activeBrand;
+    const filtered = state.models.filter(m => m.active && m.origin === brandOrigin);
+
+    if (filtered.length === 0) {
+        select.innerHTML = '<option value="">Sin modelos para esta marca</option>';
+        return;
+    }
+
+    filtered.forEach(m => {
+        select.innerHTML += `<option value="${m.sku}">${m.sku} — ${m.name}</option>`;
+    });
+
+    updateEmpaqueModelSizes();
+}
+
+function updateEmpaqueModelSizes() {
+    const mSelect = document.getElementById('empaque-model');
+    const sSelect = document.getElementById('empaque-size');
+    if (!mSelect || !sSelect) return;
+
+    const sku = mSelect.value;
+    const model = state.models.find(m => m.sku === sku);
+    
+    sSelect.innerHTML = '';
+    if (!model) return;
+
+    for (let size = model.min; size <= model.max; size++) {
+        const option = document.createElement('option');
+        option.value = size;
+        option.textContent = size;
+        if (size === 42) option.selected = true;
+        sSelect.appendChild(option);
+    }
+    
+    const ppBoxField = document.getElementById('empaque-ppbox');
+    if (ppBoxField) ppBoxField.value = model.ppbox || 8;
+
+    updateEmpaquePreview();
+}
+
+function setEmpaqueRemainderMode(mode) {
+    empaqueRemainderMode = mode;
+    const looseChip = document.getElementById('empaque-rem-loose');
+    const incChip = document.getElementById('empaque-rem-incomplete');
+    const desc = document.getElementById('empaque-rem-desc');
+
+    if (mode === 'loose') {
+        if (looseChip) looseChip.className = 'rem-chip active-loose';
+        if (incChip) incChip.className = 'rem-chip inactive';
+        if (desc) desc.textContent = 'Se generarán etiquetas individuales sin caja padre.';
+    } else {
+        if (looseChip) looseChip.className = 'rem-chip inactive';
+        if (incChip) incChip.className = 'rem-chip active-fill';
+        if (desc) desc.textContent = 'Se creará una caja marcada como "Pendiente por Rellenar".';
+    }
+    updateEmpaquePreview();
+}
+
+function updateEmpaquePreview() {
+    const model = document.getElementById('empaque-model')?.value || 'FS300CMFFPBL';
+    const qty = parseInt(document.getElementById('empaque-qty')?.value) || 0;
+    const ppbox = parseInt(document.getElementById('empaque-ppbox')?.value) || 8;
+    const isMasterOn = document.getElementById('empaque-master-toggle')?.classList.contains('on');
+
+    const mText = document.getElementById('empaque-preview-master');
+    const eText = document.getElementById('empaque-preview-extra');
+    const toggleSub = document.getElementById('empaque-toggle-sub');
+
+    if (!isMasterOn) {
+        if (mText) mText.textContent = `✅ ${qty} etiquetas individuales (sin caja padre)`;
+        if (eText) eText.style.display = 'none';
+        if (toggleSub) toggleSub.textContent = 'Etiquetas de calzado suelto';
+        return;
+    }
+
+    const cajasCompletas = Math.floor(qty / ppbox);
+    const sobrante = qty % ppbox;
+
+    if (toggleSub) {
+        toggleSub.textContent = `${cajasCompletas} cajas × ${ppbox} pares + ${sobrante} sueltos`;
+    }
+
+    if (mText) {
+        mText.textContent = cajasCompletas > 0 
+            ? `✅ ${cajasCompletas} Cajas Master completas (${cajasCompletas * ppbox} pares)`
+            : '⚠️ 0 Cajas Master completas';
+    }
+
+    if (eText) {
+        if (sobrante > 0) {
+            eText.style.display = 'block';
+            if (empaqueRemainderMode === 'loose') {
+                eText.textContent = `+ ${sobrante} etiqueta(s) individual(es) suelta(s)`;
+                eText.className = 'preview-line orange';
+            } else {
+                eText.textContent = `+ 1 caja incompleta (${sobrante}/${ppbox} pares)`;
+                eText.className = 'preview-line orange';
+            }
+        } else {
+            eText.style.display = 'none';
+        }
+    }
+}
+
+function handleEmpaquePrint() {
+    const model = document.getElementById('empaque-model').value;
+    const size = document.getElementById('empaque-size').value;
+    const lote = document.getElementById('empaque-lote').value;
+    const qty = parseInt(document.getElementById('empaque-qty').value) || 0;
+    const ppbox = parseInt(document.getElementById('empaque-ppbox').value) || 8;
+    const isMasterOn = document.getElementById('empaque-master-toggle').classList.contains('on');
+
+    if (qty <= 0) {
+        showSnackbar('⚠️ Ingrese una cantidad válida mayor a 0', 'warning');
+        return;
+    }
+
+    const summary = document.getElementById('empaque-confirm-summary');
+    
+    let boxesDetail = 'Pares sueltos (sin auto-boxing)';
+    if (isMasterOn) {
+        const cajasCompletas = Math.floor(qty / ppbox);
+        const sobrante = qty % ppbox;
+        boxesDetail = `${cajasCompletas} completas`;
+        if (sobrante > 0) {
+            boxesDetail += ` + ${sobrante} par(es) suelto(s) (${empaqueRemainderMode === 'loose' ? 'sueltos' : 'caja incompleta'})`;
+        }
+    }
+
+    summary.innerHTML = `
+        <div class="confirm-row"><span class="confirm-label">Modelo:</span> ${model}</div>
+        <div class="confirm-row"><span class="confirm-label">Talla:</span> ${size}</div>
+        <div class="confirm-row"><span class="confirm-label">Lote:</span> ${lote}</div>
+        <div class="confirm-row"><span class="confirm-label">Cantidad:</span> ${qty} pares</div>
+        <div class="confirm-row"><span class="confirm-label">Configuración:</span> ${boxesDetail}</div>
+    `;
+
+    document.getElementById('modal-empaque-confirm').classList.add('show');
+}
+
+function confirmEmpaquePrint() {
+    document.getElementById('modal-empaque-confirm').classList.remove('show');
+    
+    const model = document.getElementById('empaque-model').value;
+    const size = document.getElementById('empaque-size').value;
+    const lote = document.getElementById('empaque-lote').value;
+    const qty = parseInt(document.getElementById('empaque-qty').value) || 0;
+    const ppbox = parseInt(document.getElementById('empaque-ppbox').value) || 8;
+    const isMasterOn = document.getElementById('empaque-master-toggle').classList.contains('on');
+
+    if (!state.printedButNotEntered) {
+        state.printedButNotEntered = [];
+    }
+
+    const uuid = `PD-EMP-${lote}-${size}-${Math.floor(Math.random()*9000+1000)}`;
+    const qrItem = {
+        uuid: uuid,
+        model: model,
+        size: size,
+        lote: lote,
+        qty: qty,
+        isMaster: isMasterOn,
+        ppbox: ppbox,
+        remainderMode: empaqueRemainderMode,
+        date: new Date().toLocaleDateString('es-VE') + ' ' + new Date().toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'}),
+        status: 'pending'
+    };
+
+    state.printedButNotEntered.unshift(qrItem);
+    saveAppState(state);
+
+    // Dynamic success banner
+    const banner = document.getElementById('empaque-success-banner');
+    const detail = document.getElementById('empaque-success-detail');
+    
+    let boxSummaryText = isMasterOn 
+        ? `${Math.floor(qty/ppbox)} Cajas Master + ${qty%ppbox} Pares sueltos`
+        : `${qty} Pares individuales`;
+
+    detail.innerHTML = `
+        <div>🖨 Etiquetas impresas correctamente.</div>
+        <div>📦 Configuración: ${boxSummaryText}</div>
+        <div>📡 Enviado a BarTender Server (TSC TE200)</div>
+        <div style="margin-top:8px;font-size:0.6875rem;opacity:0.5;font-family:monospace;">UUID de Etiqueta: ${uuid}</div>
+    `;
+    banner.style.display = 'block';
+    banner.classList.add('animate-in');
+    
+    document.getElementById('btn-empaque-print').style.display = 'none';
+    showSnackbar('✅ Etiquetas impresas y listas para Almacén', 'success');
+
+    // Update history view
+    renderDynamicQRHistory();
+}
+
+function dismissEmpaqueSuccess() {
+    document.getElementById('empaque-success-banner').style.display = 'none';
+    document.getElementById('btn-empaque-print').style.display = '';
+    document.getElementById('empaque-qty').value = '24';
+    updateEmpaquePreview();
+}
+
+function renderDynamicQRHistory() {
+    const container = document.getElementById('dynamic-qr-history-container');
+    if (!container) return;
+
+    if (!state.printedButNotEntered || state.printedButNotEntered.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let itemsHTML = '';
+    state.printedButNotEntered.forEach(item => {
+        const icon = item.isMaster ? '📦' : 'QR';
+        const statusText = item.status === 'entered' ? 'INGRESADO' : 'PENDIENTE INGRESO';
+        const badgeClass = item.status === 'entered' ? 'success' : 'warning';
+        itemsHTML += `
+            <div class="qr-item">
+                <div class="qr-preview-box-sm">${icon}</div>
+                <div style="flex:1;">
+                    <div style="font-size:0.8125rem;font-weight:600;">${item.uuid}</div>
+                    <div style="font-size:0.6875rem;color:var(--on-surface-variant);opacity:0.5;">
+                        ${item.model} · T${item.size} · Lote ${item.lote} (${item.qty} pares)
+                    </div>
+                    <span class="pill ${badgeClass}" style="font-size:0.5625rem;padding:1px 4px;margin-top:2px;display:inline-block;">${statusText}</span>
+                </div>
+                <button class="qr-reprint-btn" onclick="reprintQR('${item.uuid}')">🖨</button>
+            </div>
+        `;
+    });
+
+    container.innerHTML = `
+        <div class="qr-day-group open" style="margin-bottom: 16px;">
+            <div class="qr-day-header">
+                <div>
+                    <div class="qr-day-date">Etiquetas de Empaque Recientes</div>
+                    <div class="qr-day-count">${state.printedButNotEntered.length} etiquetas registradas</div>
+                </div>
+            </div>
+            <div class="qr-day-items" style="display: block;">
+                ${itemsHTML}
+            </div>
+        </div>
+    `;
+}
+
+function toggleHubCard(id) {
+    const card = document.getElementById('hub-card-' + id);
+    if (!card) return;
+    
+    const isExpanded = card.classList.contains('expanded');
+    
+    // Collapse all other cards
+    document.querySelectorAll('.hub-card-collapsible').forEach(c => {
+        c.classList.remove('expanded');
+    });
+    
+    // Toggle the clicked card
+    if (!isExpanded) {
+        card.classList.add('expanded');
+    }
+}
+
+function setEntryMode(mode) {
+    entryMode = mode;
+    const manualChip = document.getElementById('entry-mode-manual');
+    const qrChip = document.getElementById('entry-mode-qr');
+    const qrCard = document.getElementById('entry-qr-scanner-card');
+    const originCard = document.getElementById('entry-origin-card');
+    const productCard = document.getElementById('entry-product-card');
+    const masterCard = document.getElementById('entry-master-card');
+    const btnRegister = document.getElementById('btn-entry-register');
+
+    if (mode === 'manual') {
+        if (manualChip) manualChip.className = 'rem-chip active-loose';
+        if (qrChip) qrChip.className = 'rem-chip inactive';
+        if (qrCard) qrCard.style.display = 'none';
+        if (originCard) originCard.style.display = 'block';
+        if (productCard) productCard.style.display = 'block';
+        if (masterCard) masterCard.style.display = 'block';
+        if (btnRegister) btnRegister.style.display = 'block';
+        dismissEntrySuccess();
+    } else {
+        if (manualChip) manualChip.className = 'rem-chip inactive';
+        if (qrChip) qrChip.className = 'rem-chip active-fill';
+        if (qrCard) qrCard.style.display = 'block';
+        if (originCard) originCard.style.display = 'none';
+        if (productCard) productCard.style.display = 'none';
+        if (masterCard) masterCard.style.display = 'none';
+        if (btnRegister) btnRegister.style.display = 'none';
+        dismissEntrySuccess();
+        populatePendingQRSelect();
+    }
+}
+
+function populatePendingQRSelect() {
+    const select = document.getElementById('entry-pending-qr-select');
+    const scannedResult = document.getElementById('entry-qr-scanned-result');
+    const noPendingQRs = document.getElementById('entry-no-pending-qrs');
+    if (!select) return;
+
+    select.innerHTML = '';
+
+    const pending = (state.printedButNotEntered || []).filter(i => i.status === 'pending');
+
+    if (pending.length === 0) {
+        select.parentNode.style.display = 'none';
+        if (scannedResult) scannedResult.style.display = 'none';
+        if (noPendingQRs) noPendingQRs.style.display = 'block';
+        return;
+    }
+
+    select.parentNode.style.display = 'block';
+    if (noPendingQRs) noPendingQRs.style.display = 'none';
+
+    select.innerHTML = '<option value="">-- Seleccionar etiqueta --</option>';
+    pending.forEach(item => {
+        const detail = `${item.uuid} [${item.model} T${item.size} - Qty: ${item.qty}]`;
+        select.innerHTML += `<option value="${item.uuid}">${detail}</option>`;
+    });
+
+    if (scannedResult) scannedResult.style.display = 'none';
+}
+
+function simulateQRScan() {
+    const select = document.getElementById('entry-pending-qr-select');
+    const uuid = select.value;
+    const scannedResult = document.getElementById('entry-qr-scanned-result');
+    
+    if (!uuid) {
+        if (scannedResult) scannedResult.style.display = 'none';
+        return;
+    }
+
+    const item = state.printedButNotEntered.find(i => i.uuid === uuid);
+    if (!item) return;
+
+    document.getElementById('entry-scanned-uuid').textContent = item.uuid;
+    
+    // Find name of model
+    const modelObj = state.models.find(m => m.sku === item.model);
+    const modelName = modelObj ? modelObj.name : item.model;
+    
+    document.getElementById('entry-scanned-details').innerHTML = `
+        <div><strong>Modelo:</strong> ${item.model} (${modelName})</div>
+        <div><strong>Talla:</strong> ${item.size} · <strong>Lote:</strong> ${item.lote}</div>
+        <div><strong>Fecha Empaque:</strong> ${item.date}</div>
+    `;
+
+    const boxSummary = item.isMaster 
+        ? `${Math.floor(item.qty/item.ppbox)} Cajas Master + ${item.qty%item.ppbox} Pares sueltos`
+        : `${item.qty} Pares individuales`;
+
+    document.getElementById('entry-scanned-qty').textContent = `Cantidad: ${item.qty} pares (${boxSummary})`;
+    
+    if (scannedResult) {
+        scannedResult.style.display = 'block';
+        scannedResult.classList.add('animate-in');
+    }
+}
+
+function confirmQRWarehouseEntry() {
+    const select = document.getElementById('entry-pending-qr-select');
+    const uuid = select.value;
+    const rack = document.getElementById('entry-qr-rack').value;
+
+    if (!uuid) return;
+
+    const item = state.printedButNotEntered.find(i => i.uuid === uuid);
+    if (!item) return;
+
+    // Ingest into warehouse stock
+    state.stats.stock += item.qty;
+    if (item.isMaster) {
+        state.stats.cajasMaster += Math.floor(item.qty / item.ppbox);
+    }
+    
+    // Mark QR as entered
+    item.status = 'entered';
+    saveAppState(state);
+    renderHomeStats();
+
+    // Log trace
+    let boxSummaryText = item.isMaster 
+        ? `📦 ${Math.floor(item.qty/item.ppbox)} Cajas Master`
+        : `📦 ${item.qty} pares individuales`;
+    if (item.isMaster && item.qty % item.ppbox > 0) {
+        boxSummaryText += ` + ${item.qty % item.ppbox} pares sueltos`;
+    }
+
+    const details = `Ingreso mediante escaneo de código QR pre-impreso.\nUUID de Etiqueta: ${item.uuid}\nModelo: ${item.model}\nTalla: ${item.size}\nLote: ${item.lote}\nUbicación: ${rack}\nDetalles Cajas: ${boxSummaryText}`;
+    logTraceAction('produccion', `Entrada QR · ${item.model}`, `Ingresados ${item.qty} pares en rack ${rack}`, details);
+
+    // Show dynamic success banner for warehouse entry
+    const banner = document.getElementById('entry-success-banner');
+    const detail = document.getElementById('success-detail');
+    detail.innerHTML = `
+        <div>✅ ${item.qty} pares ingresados correctamente en el almacén (vía QR Empaque).</div>
+        <div>📍 Ubicación asignada: Pasillo ${rack.split('-')[1].charAt(0)}, Rack: ${rack}</div>
+        <div style="color:var(--dispatch);font-weight:600;margin-top:4px;">📦 Stock e inventario actualizados.</div>
+        <div style="margin-top:8px;font-size:0.6875rem;opacity:0.5;font-family:monospace;">UUID Etiqueta Vinculada: ${item.uuid}</div>
+    `;
+    
+    // Hide scanner card and show success banner
+    const qrScannerCard = document.getElementById('entry-qr-scanner-card');
+    if (qrScannerCard) qrScannerCard.style.display = 'none';
+    banner.style.display = 'block';
+    banner.classList.add('animate-in');
+
+    showSnackbar('✅ Ingreso por código QR completado con éxito', 'success');
+
+    // Update dynamic QR history if open
+    renderDynamicQRHistory();
 }
 </script>
 

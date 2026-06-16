@@ -30,13 +30,28 @@ import com.punteradigital.inventory.presentation.viewmodel.InventoryUiState
 import com.punteradigital.inventory.presentation.viewmodel.RemainderMode
 import com.punteradigital.inventory.presentation.components.*
 import com.punteradigital.inventory.ui.theme.*
+import com.punteradigital.inventory.data.local.entity.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EntryScreen(viewModel: InventoryViewModel) {
+fun EntryScreen(
+    viewModel: InventoryViewModel,
+    onNavigateToScanner: (String, String) -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val user by viewModel.currentUser.collectAsState()
     val origin by viewModel.currentOrigin.collectAsState()
+
+    val isRackLocked by viewModel.isRackLocked.collectAsState()
+    val lockedRack by viewModel.lockedRack.collectAsState()
+
+    LaunchedEffect(isRackLocked) {
+        if (isRackLocked && viewModel.lockedRack.value == null) {
+            viewModel.setLockedRack("A1")
+        }
+    }
 
     // Form state — origin, model, size PERSIST between entries
     var selectedOrigin by remember { mutableStateOf(Origin.FOOT_SAFE) }
@@ -46,7 +61,7 @@ fun EntryScreen(viewModel: InventoryViewModel) {
 
     var modelExpanded by remember { mutableStateOf(false) }
     var selectedModel by remember { mutableStateOf("") }
-    val models = listOf("FS300CMFFPBL", "FS302CMN", "FS400BK", "FS500GY")
+    val models = com.punteradigital.inventory.domain.model.Catalog.models
 
     var sizeExpanded by remember { mutableStateOf(false) }
     var selectedSize by remember { mutableStateOf("") }
@@ -97,21 +112,89 @@ fun EntryScreen(viewModel: InventoryViewModel) {
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .imePadding()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(if (isLandscape) 12.dp else 16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp)
-            ) {
-                // ═══ ORIGIN SELECTOR ═══
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(if (isLandscape) 12.dp else 16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp)
+                ) {
+
+                        // 🔒 Fijar Rack para Ingresos Rápidos
+                        KineticCard(
+                            padding = 16.dp
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "🔒 Fijar Rack para Ingresos",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            "El escáner ingresará los QR en este rack directamente en modo ráfaga.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Switch(
+                                        checked = isRackLocked,
+                                        onCheckedChange = { viewModel.setRackLocked(it) }
+                                    )
+                                }
+
+                                if (isRackLocked) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    var rackDropExpanded by remember { mutableStateOf(false) }
+                                    val currentLocked = lockedRack ?: "A1"
+                                    
+                                    ExposedDropdownMenuBox(
+                                        expanded = rackDropExpanded,
+                                        onExpandedChange = { rackDropExpanded = it },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        KineticTextField(
+                                            value = "📍 Rack Fijado: $currentLocked",
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = "Rack de Destino Fijo",
+                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = rackDropExpanded) },
+                                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
+                                        )
+                                        ExposedDropdownMenu(
+                                            expanded = rackDropExpanded,
+                                            onDismissRequest = { rackDropExpanded = false }
+                                        ) {
+                                            rackLocations.filter { it != "PISO" }.forEach { rack ->
+                                                DropdownMenuItem(
+                                                    text = { Text("📍 $rack") },
+                                                    onClick = {
+                                                        viewModel.setLockedRack(rack)
+                                                        rackDropExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ═══ ORIGIN SELECTOR ═══
                 KineticCard(
                     padding = 20.dp
                 ) {
@@ -631,8 +714,9 @@ fun EntryScreen(viewModel: InventoryViewModel) {
                     }
                 )
             }
+        } // End of Column (Manual Entry)
 
-            // ═══ SUCCESS OVERLAY ═══
+        // ═══ SUCCESS OVERLAY ═══
             if (uiState is InventoryUiState.SuccessEntry) {
                 val state = uiState as InventoryUiState.SuccessEntry
                 EntrySuccessOverlay(
@@ -670,24 +754,30 @@ fun EntryScreen(viewModel: InventoryViewModel) {
 
             // ═══ ERROR SNACKBAR ═══
             if (uiState is InventoryUiState.Error) {
+                androidx.compose.runtime.LaunchedEffect(uiState) {
+                    kotlinx.coroutines.delay(4000)
+                    viewModel.resetUiState()
+                }
                 val state = uiState as InventoryUiState.Error
-                Snackbar(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError,
-                    action = {
-                        TextButton(onClick = { viewModel.resetUiState() }) {
-                            Text("OK", color = MaterialTheme.colorScheme.onError)
-                        }
-                    }
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
-                    Text(state.message)
+                    Snackbar(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                        action = {
+                            TextButton(onClick = { viewModel.resetUiState() }) {
+                                Text("OK", color = MaterialTheme.colorScheme.onError)
+                            }
+                        }
+                    ) {
+                        Text(state.message)
+                    }
                 }
             }
-        }
-    }
+        } // End of new Box
+    } // End of Column (padding inside Scaffold)
 }
 
 @Composable
@@ -1104,5 +1194,87 @@ private fun ConfirmRow(label: String, value: String) {
     ) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRE-ENTRY TAB (EMPAQUE BATCHES)
+// ═══════════════════════════════════════════════════════════════
+
+@Composable
+fun PreEntryTab(viewModel: InventoryViewModel, currentUserId: String) {
+    val pendingBatches by viewModel.pendingLabelBatches.collectAsState()
+
+    if (pendingBatches.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                "No hay lotes de etiquetas pendientes por ingresar.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+
+    val df = remember { java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()) }
+
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(pendingBatches.filter { it.enteredCount < it.totalCount }) { batch ->
+            KineticCard(
+                modifier = Modifier.fillMaxWidth(),
+                padding = 16.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${batch.model} - Talla ${batch.size}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = "${batch.totalCount - batch.enteredCount} uds",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("Lote: ${batch.lot} | Origen: ${Origin.valueOf(batch.origin).displayName}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Generado el ${df.format(java.util.Date(batch.createdAt))} por ${batch.createdBy}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { viewModel.confirmPreEntryBatch(batch.batchId, currentUserId) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = DispatchGreen)
+                    ) {
+                        Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("CONFIRMAR ENTRADA", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
     }
 }

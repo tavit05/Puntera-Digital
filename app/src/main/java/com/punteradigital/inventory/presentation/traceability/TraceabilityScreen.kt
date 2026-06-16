@@ -228,11 +228,11 @@ private fun AnalyticsTab(viewModel: InventoryViewModel) {
     val modelBreakdown by viewModel.modelStatusBreakdown.collectAsState(initial = emptyList())
     val allModels by viewModel.allModelsInventory.collectAsState(initial = emptyList())
     val allSizes by viewModel.allSizesInventory.collectAsState(initial = emptyList())
-    val movements by viewModel.traceabilityMovements.collectAsState(initial = emptyList())
+    val weeklyMovements by viewModel.weeklyMovements.collectAsState(initial = emptyList())
 
     // Weekly activity (calculated client-side)
-    val weeklyActivity = remember(movements) {
-        calculateWeeklyActivity(movements)
+    val weeklyActivity = remember(weeklyMovements) {
+        calculateWeeklyActivity(weeklyMovements)
     }
 
     LazyColumn(

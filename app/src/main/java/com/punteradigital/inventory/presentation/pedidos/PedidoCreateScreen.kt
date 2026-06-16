@@ -21,12 +21,12 @@ import com.punteradigital.inventory.presentation.components.KineticCard
 import com.punteradigital.inventory.presentation.components.KineticTextField
 import com.punteradigital.inventory.ui.theme.*
 
-private val availableModels = listOf("FS300CMFFFPBL", "FS302CMN", "FS400BK", "SF200LT")
-private val availableSizes = (36..46).map { it.toString() }
+private val availableModels = com.punteradigital.inventory.domain.model.Catalog.models
+private val availableSizes = com.punteradigital.inventory.domain.model.Catalog.sizes
 
 private data class CreateLine(
     val modelIndex: Int = 0,
-    val sizeIndex: Int = 6,  // default to 42
+    val sizeIndex: Int = availableSizes.indexOf("42").coerceAtLeast(0),  // default to 42
     val qty: String = "1"
 )
 
@@ -219,6 +219,7 @@ fun PedidoCreateScreen(
                             )
                             PedidoRepository.pedidos.add(0, newPedido)
                             showCreated = true
+                            onBack()
                         }
                     },
                     type = if (showCreated) ButtonType.SECONDARY else ButtonType.PRIMARY

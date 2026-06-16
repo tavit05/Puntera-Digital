@@ -144,11 +144,11 @@ fun GlobalEditPanelBottomSheet(
                 )
                 EditOptionRow(
                     icon = "⚡", iconColor = Color(0xFFFFCC02),
-                    title = "Modo Ráfaga", subtitle = "Configurar timeout y sonidos"
+                    title = "Modo Ráfaga", subtitle = "Próximamente"
                 )
                 EditOptionRow(
                     icon = "🔔", iconColor = Color(0xFFFF3B30),
-                    title = "Alertas y Sonidos", subtitle = "Feedback táctil y auditivo"
+                    title = "Alertas y Sonidos", subtitle = "Próximamente"
                 )
             }
 
@@ -156,15 +156,15 @@ fun GlobalEditPanelBottomSheet(
             EditSection(title = "Datos") {
                 EditOptionRow(
                     icon = "☁️", iconColor = Color(0xFF2196F3),
-                    title = "Sincronización", subtitle = "Google Sheets · Conectado"
+                    title = "Sincronización", subtitle = "Próximamente"
                 )
                 EditOptionRow(
                     icon = "🖨️", iconColor = Color(0xFFAF52DE),
-                    title = "Impresora QR", subtitle = "BarTender Enterprise · TSC TE200"
+                    title = "Impresora QR", subtitle = "Próximamente"
                 )
                 EditOptionRow(
                     icon = "📊", iconColor = Color(0xFF009688),
-                    title = "Exportar Reportes", subtitle = "CSV, PDF, Google Sheets"
+                    title = "Exportar Reportes", subtitle = "Próximamente"
                 )
             }
 

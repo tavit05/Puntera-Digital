@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import com.punteradigital.inventory.domain.model.Origin
 
@@ -154,12 +155,19 @@ fun PunteraDigitalTheme(
     // Previously we animated all 17 properties, which caused cascading recompositions
     // across the entire UI tree on every frame — even when the theme was NOT changing.
     val animSpec = tween<Color>(300)
-    val animatedScheme = targetScheme.copy(
-        primary = animateColorAsState(targetScheme.primary, animSpec, label = "primary").value,
-        background = animateColorAsState(targetScheme.background, animSpec, label = "background").value,
-        surface = animateColorAsState(targetScheme.surface, animSpec, label = "surface").value,
-        surfaceVariant = animateColorAsState(targetScheme.surfaceVariant, animSpec, label = "surfaceVariant").value
-    )
+    val primaryColor by animateColorAsState(targetScheme.primary, animSpec, label = "primary")
+    val backgroundColor by animateColorAsState(targetScheme.background, animSpec, label = "background")
+    val surfaceColor by animateColorAsState(targetScheme.surface, animSpec, label = "surface")
+    val surfaceVariantColor by animateColorAsState(targetScheme.surfaceVariant, animSpec, label = "surfaceVariant")
+
+    val animatedScheme = androidx.compose.runtime.remember(primaryColor, backgroundColor, surfaceColor, surfaceVariantColor) {
+        targetScheme.copy(
+            primary = primaryColor,
+            background = backgroundColor,
+            surface = surfaceColor,
+            surfaceVariant = surfaceVariantColor
+        )
+    }
 
     MaterialTheme(
         colorScheme = animatedScheme,

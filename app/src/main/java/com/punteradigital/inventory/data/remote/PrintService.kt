@@ -1,6 +1,7 @@
 package com.punteradigital.inventory.data.remote
 
 import okhttp3.RequestBody
+import org.json.JSONObject
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Headers
@@ -8,9 +9,7 @@ import retrofit2.http.POST
 
 /**
  * BarTender Integration Builder endpoint.
- * Sends CSV payload via POST to http://[IP]:8080/imprimir
- * 
- * CSV columns: UUID,Modelo,Talla,Lote,Origen
+ * Sends JSON payload via POST to http://[IP]:8080/Integration/PunteraDigital_QR/Execute
  */
 interface PrintService {
 
@@ -20,12 +19,17 @@ interface PrintService {
 }
 
 /**
- * Helper to build the CSV payload for BarTender.
+ * Helper to build the JSON payload for BarTender.
  */
 object PrintCsvBuilder {
     fun buildJsonPayload(item: PrintLabelItem): String {
-        // Sending as JSON object for BarTender "Variables JSON" input format
-        return """{"UUID":"${item.uuid}","Modelo":"${item.model}","Talla":"${item.size}","Lote":"${item.lot}","Origen":"${item.origin}"}"""
+        return JSONObject().apply {
+            put("UUID", item.uuid)
+            put("Modelo", item.model)
+            put("Talla", item.size)
+            put("Lote", item.lot)
+            put("Origen", item.origin)
+        }.toString()
     }
 }
 

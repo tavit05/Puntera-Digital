@@ -18,6 +18,7 @@ local.properties
 
 # ─── JVM heap dumps (archivos enormes) ───
 *.hprof
+*.log
 
 # ─── OS generated ───
 .DS_Store

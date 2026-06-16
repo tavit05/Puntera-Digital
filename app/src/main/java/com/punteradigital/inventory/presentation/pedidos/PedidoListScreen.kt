@@ -3,11 +3,13 @@ package com.punteradigital.inventory.presentation.pedidos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import com.punteradigital.inventory.presentation.components.kineticClick
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -77,59 +79,66 @@ object PedidoRepository {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PedidoListScreen(
+    onBack: () -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToDetail: (Int) -> Unit,
-    currentUserRole: String = "supervisor"
+    currentUserRole: String = "ADMIN"
 ) {
     val pedidos = PedidoRepository.pedidos
-    val canCreate = currentUserRole in listOf("ADMIN", "SUPERVISOR", "supervisor", "it")
+    val canCreate = currentUserRole.equals("ADMIN", ignoreCase = true) || currentUserRole.equals("SUPERVISOR_ALMACEN", ignoreCase = true)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .padding(top = 16.dp)
-    ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    "Pedidos de Venta",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Pedidos de Venta", fontWeight = FontWeight.Bold)
+                        Text(
+                            "${pedidos.size} pedidos activos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = DispatchGreen,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    "${pedidos.size} pedidos activos",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = DispatchGreen,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            )
+        },
+        floatingActionButton = {
             if (canCreate) {
                 FloatingActionButton(
                     onClick = onNavigateToCreate,
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(48.dp)
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Icon(Icons.Default.Add, "Nuevo Pedido")
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Pedido list
+    ) { padding ->
         LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 100.dp)
+            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
         ) {
             itemsIndexed(pedidos) { index, pedido ->
                 PedidoCard(pedido = pedido, onClick = { onNavigateToDetail(index) })
@@ -152,7 +161,7 @@ fun PedidoCard(pedido: Pedido, onClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .kineticClick(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(alpha = 0.3f))

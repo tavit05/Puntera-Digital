@@ -53,6 +53,9 @@ interface InventoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMasterBox(box: MasterBoxEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMasterBoxes(boxes: List<MasterBoxEntity>)
+
     @Query("SELECT * FROM master_boxes WHERE uuid = :uuid LIMIT 1")
     suspend fun getMasterBoxByUuid(uuid: String): MasterBoxEntity?
 
@@ -83,15 +86,22 @@ interface InventoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMovement(movement: MovementEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMovements(movements: List<MovementEntity>)
+
     /** Recent movements for HomeScreen — avoids loading entire table */
     @Query("SELECT * FROM movements ORDER BY timestamp DESC LIMIT :limit")
     fun getRecentMovements(limit: Int = 20): Flow<List<MovementEntity>>
 
-    /** Full movement history — only for Traceability tab */
-    @Query("SELECT * FROM movements ORDER BY timestamp DESC")
+    /** Full movement history — limited to 1000 for UI performance */
+    @Query("SELECT * FROM movements ORDER BY timestamp DESC LIMIT 1000")
     fun getAllMovements(): Flow<List<MovementEntity>>
 
-    @Query("SELECT * FROM movements ORDER BY timestamp DESC")
+    /** Movements for the last N days */
+    @Query("SELECT * FROM movements WHERE timestamp >= :timestamp ORDER BY timestamp DESC")
+    fun getMovementsSince(timestamp: Long): Flow<List<MovementEntity>>
+
+    @Query("SELECT * FROM movements ORDER BY timestamp DESC LIMIT 5000")
     suspend fun getAllMovementsSync(): List<MovementEntity>
 
     @Query("SELECT * FROM movements WHERE uuid = :uuid ORDER BY timestamp DESC")
@@ -210,6 +220,62 @@ interface InventoryDao {
     /** Get all entry movements grouped by date (for QR history) */
     @Query("SELECT * FROM movements WHERE type = 'IN' ORDER BY timestamp DESC")
     fun getEntryMovements(): Flow<List<MovementEntity>>
+
+    // ═══════════════════════════════════════════════════════════════
+    // LABELS / EMPAQUE (Pre-Entry) QUERIES
+    // ═══════════════════════════════════════════════════════════════
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLabel(label: LabelEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLabels(labels: List<LabelEntity>)
+
+    @Query("SELECT * FROM labels WHERE status = :status ORDER BY createdAt DESC")
+    fun getLabelsByStatus(status: String): Flow<List<LabelEntity>>
+
+    @Query("SELECT * FROM labels WHERE batchId = :batchId ORDER BY uuid ASC")
+    fun getLabelsByBatch(batchId: String): Flow<List<LabelEntity>>
+
+    @Query("SELECT * FROM labels WHERE batchId = :batchId AND status NOT IN ('ENTERED', 'DELETED')")
+    suspend fun getPendingLabelsByBatchSync(batchId: String): List<LabelEntity>
+
+    @Query("SELECT * FROM labels WHERE uuid = :uuid LIMIT 1")
+    suspend fun getLabelByUuid(uuid: String): LabelEntity?
+
+    @Query("SELECT * FROM labels WHERE parentLabelUuid = :parentUuid")
+    suspend fun getChildrenLabels(parentUuid: String): List<LabelEntity>
+
+    @Query("UPDATE labels SET status = 'PRINTED', printedAt = :timestamp WHERE uuid = :uuid AND status = 'CREATED'")
+    suspend fun markLabelPrinted(uuid: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE labels SET status = 'ENTERED', enteredAt = :timestamp, enteredBy = :userId WHERE uuid = :uuid")
+    suspend fun markLabelEntered(uuid: String, userId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE labels SET status = 'ENTERED', enteredAt = :timestamp, enteredBy = :userId WHERE batchId = :batchId AND status NOT IN ('ENTERED', 'DELETED')")
+    suspend fun markBatchEntered(batchId: String, userId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE labels SET status = 'DELETED' WHERE batchId = :batchId AND status != 'ENTERED'")
+    suspend fun deleteLabelBatch(batchId: String)
+
+    @Query("UPDATE labels SET status = 'DELETED' WHERE uuid = :uuid AND status != 'ENTERED'")
+    suspend fun deleteLabel(uuid: String)
+
+    @Query("""
+        SELECT batchId, model, size, lot, labelType, labelFormat, origin, createdBy, MIN(createdAt) as createdAt,
+               COUNT(*) as totalCount,
+               SUM(CASE WHEN status = 'PRINTED' THEN 1 ELSE 0 END) as printedCount,
+               SUM(CASE WHEN status = 'ENTERED' THEN 1 ELSE 0 END) as enteredCount
+        FROM labels 
+        WHERE status != 'DELETED'
+        GROUP BY batchId 
+        ORDER BY createdAt DESC 
+        LIMIT 100
+    """)
+    fun getLabelBatchSummaries(): Flow<List<LabelBatchSummary>>
+
+    @Query("SELECT COUNT(*) FROM labels WHERE status IN ('CREATED', 'PRINTED')")
+    fun getPendingLabelCount(): Flow<Int>
 }
 
 data class BatchStatus(

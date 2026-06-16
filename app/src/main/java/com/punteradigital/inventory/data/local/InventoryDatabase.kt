@@ -11,9 +11,11 @@ import com.punteradigital.inventory.data.local.entity.*
         MasterBoxEntity::class,
         MovementEntity::class,
         SyncQueueItem::class,
-        UserEntity::class
+        UserEntity::class,
+        LabelEntity::class
     ],
-    version = 5,   // v5: Added indices on products(status, parentUuid, origin+status),
+    version = 6,   // v6: Added LabelEntity for Empaque module pre-entries
+                   // v5: Added indices on products(status, parentUuid, origin+status),
                    //     master_boxes(isComplete+status, model+size+origin),
                    //     movements(type+timestamp, uuid)
     exportSchema = false

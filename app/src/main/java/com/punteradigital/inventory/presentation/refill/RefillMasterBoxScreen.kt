@@ -359,6 +359,10 @@ fun RefillMasterBoxScreen(
 
             // Error snackbar
             if (uiState is InventoryUiState.Error) {
+                androidx.compose.runtime.LaunchedEffect(uiState) {
+                    kotlinx.coroutines.delay(4000)
+                    viewModel.resetUiState()
+                }
                 val state = uiState as InventoryUiState.Error
                 Snackbar(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),

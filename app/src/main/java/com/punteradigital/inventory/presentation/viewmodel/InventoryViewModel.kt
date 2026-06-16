@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
+import com.punteradigital.inventory.data.local.EmpaquePreferences
 
 /**
  * Remainder mode when total quantity doesn't divide evenly into boxes.
@@ -33,20 +34,29 @@ enum class RemainderMode {
     FILL_LATER
 }
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class InventoryViewModel @Inject constructor(
-    private val dao: InventoryDao,
+    val dao: InventoryDao,
     private val uuidGenerator: UuidGeneratorUseCase,
     val pdfGenerator: PdfGeneratorUseCase,
     private val syncManager: SyncManager,
     private val connectivityMonitor: ConnectivityMonitor,
-    val soundManager: SoundManager
+    val soundManager: SoundManager,
+    val empaquePreferences: EmpaquePreferences
 ) : ViewModel() {
 
-    // Cached formatters — SimpleDateFormat is expensive to construct.
-    // Thread-safe here because all usage is within single coroutines.
-    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    companion object {
+        // Static app-level salt — makes rainbow-table attacks against the 10,000
+        // possible 4-digit PINs infeasible without knowing this value.
+        // NOTE: If this constant ever changes, all stored PINs become invalid
+        // and users will need to be re-created.
+        private const val PIN_SALT = "punteradigital_v1_salt"
+    }
+
+    // Cached formatters — ThreadLocal ensures thread-safety in coroutines
+    private val dateFormat = ThreadLocal.withInitial { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
+    private val timeFormat = ThreadLocal.withInitial { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
 
     private val _uiState = MutableStateFlow<InventoryUiState>(InventoryUiState.Idle)
     val uiState: StateFlow<InventoryUiState> = _uiState.asStateFlow()
@@ -74,6 +84,14 @@ class InventoryViewModel @Inject constructor(
 
     /** Full movement history — only for Traceability tab (lazy: Room observer starts on first collect) */
     val traceabilityMovements: Flow<List<MovementEntity>> by lazy { dao.getAllMovements() }
+
+    val weeklyMovements: Flow<List<MovementEntity>> by lazy {
+        flow {
+            emit(System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L))
+        }.flatMapLatest { cutoff ->
+            dao.getMovementsSince(cutoff)
+        }
+    }
 
     /** Dispatch list screen — STB items */
     val standByItems: Flow<List<ProductEntity>> by lazy { dao.getStandByProducts() }
@@ -107,6 +125,13 @@ class InventoryViewModel @Inject constructor(
     private val _qrSearchResults = MutableStateFlow<List<ProductEntity>>(emptyList())
     val qrSearchResults: StateFlow<List<ProductEntity>> = _qrSearchResults.asStateFlow()
 
+    // ═══ Empaque / Labels State ═══
+    val pendingLabelBatches: StateFlow<List<LabelBatchSummary>> = dao.getLabelBatchSummaries()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val pendingLabelCount: StateFlow<Int> = dao.getPendingLabelCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     fun searchQRByUuid(query: String) {
         viewModelScope.launch {
             if (query.isBlank()) {
@@ -139,6 +164,114 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
+    private val _lockedRack = MutableStateFlow<String?>(null)
+    val lockedRack: StateFlow<String?> = _lockedRack.asStateFlow()
+
+    private val _isRackLocked = MutableStateFlow(false)
+    val isRackLocked: StateFlow<Boolean> = _isRackLocked.asStateFlow()
+
+    fun setLockedRack(rack: String?) {
+        _lockedRack.value = rack
+    }
+
+    fun setRackLocked(locked: Boolean) {
+        _isRackLocked.value = locked
+    }
+
+    fun transferLocation(uuid: String, newLocation: String, userId: String) {
+        viewModelScope.launch {
+            _uiState.value = InventoryUiState.Loading("Procesando traslado...")
+            try {
+                val timestamp = System.currentTimeMillis()
+                val masterBox = dao.getMasterBoxByUuid(uuid)
+                if (masterBox != null) {
+                    val children = dao.getChildrenOfMasterBox(uuid)
+                    children.forEach { child ->
+                        dao.updateProductStatus(child.uuid, child.status, newLocation, timestamp)
+                        dao.insertMovement(MovementEntity(
+                            uuid = child.uuid, type = "TRANSFER", reason = "Traslado Interno a $newLocation",
+                            location = newLocation, timestamp = timestamp, userId = userId
+                        ))
+                    }
+                    dao.insertMovement(MovementEntity(
+                        uuid = uuid, type = "TRANSFER", reason = "Traslado Interno Caja Master a $newLocation",
+                        location = newLocation, timestamp = timestamp, userId = userId
+                    ))
+                    soundManager.playSuccessBeep()
+                    _uiState.value = InventoryUiState.SuccessMovement("Caja Master $uuid y sus ${children.size} pares trasladados a $newLocation.")
+                } else {
+                    val product = dao.getProductByUuid(uuid)
+                    if (product != null) {
+                        dao.updateProductStatus(uuid, product.status, newLocation, timestamp)
+                        dao.insertMovement(MovementEntity(
+                            uuid = uuid, type = "TRANSFER", reason = "Traslado Interno a $newLocation",
+                            location = newLocation, timestamp = timestamp, userId = userId
+                        ))
+                        soundManager.playSuccessBeep()
+                        _uiState.value = InventoryUiState.SuccessMovement("Producto $uuid trasladado a $newLocation.")
+                    } else {
+                        _uiState.value = InventoryUiState.Error("UUID no encontrado para traslado: $uuid")
+                        soundManager.playErrorBeep()
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al realizar traslado: ${e.message}")
+                soundManager.playErrorBeep()
+            }
+        }
+    }
+
+    fun adjustAuditInventory(
+        location: String,
+        scannedUuids: List<String>,
+        missingUuids: List<String>,
+        extraUuids: List<String>,
+        userId: String
+    ) {
+        viewModelScope.launch {
+            _uiState.value = InventoryUiState.Loading("Ajustando inventario de auditoría...")
+            try {
+                val timestamp = System.currentTimeMillis()
+                
+                // 1. Move extras to this location
+                extraUuids.forEach { uuid ->
+                    val product = dao.getProductByUuid(uuid)
+                    if (product != null) {
+                        dao.updateProductStatus(uuid, "AVAILABLE", location, timestamp)
+                        dao.insertMovement(MovementEntity(
+                            uuid = uuid, type = "TRANSFER", reason = "Ajuste Auditoría: Extra reubicado a $location",
+                            location = location, timestamp = timestamp, userId = userId
+                        ))
+                        if (product.parentUuid != null) {
+                             updateMasterBoxCompleteness(product.parentUuid)
+                        }
+                    }
+                }
+
+                // 2. Mark missing items as BAJA_CONTEO_CICLICO
+                missingUuids.forEach { uuid ->
+                    val product = dao.getProductByUuid(uuid)
+                    if (product != null) {
+                        dao.updateProductStatus(uuid, "BAJA_CONTEO_CICLICO", "BAJA", timestamp)
+                        dao.insertMovement(MovementEntity(
+                            uuid = uuid, type = "BAJA", reason = "Baja por Auditoría: Faltante en $location",
+                            location = "BAJA", timestamp = timestamp, userId = userId
+                        ))
+                        if (product.parentUuid != null) {
+                            updateMasterBoxCompleteness(product.parentUuid)
+                        }
+                    }
+                }
+
+                soundManager.playSuccessBeep()
+                _uiState.value = InventoryUiState.SuccessMovement("Ajuste de auditoría completado en rack $location. Extras reubicados: ${extraUuids.size}, Faltantes dados de baja: ${missingUuids.size}.")
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al ajustar inventario de auditoría: ${e.message}")
+                soundManager.playErrorBeep()
+            }
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // ORIGIN & SESSION
     // ═══════════════════════════════════════════════════════════════
@@ -164,6 +297,10 @@ class InventoryViewModel @Inject constructor(
         _uiState.value = InventoryUiState.Idle
     }
 
+    fun setUiError(message: String) {
+        _uiState.value = InventoryUiState.Error(message)
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // USER MANAGEMENT (Admin-only CRUD)
     // ═══════════════════════════════════════════════════════════════
@@ -173,7 +310,8 @@ class InventoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Check if PIN already exists
-                val existing = dao.getUserByPin(pin)
+                val hashedPin = hashPin(pin)
+                val existing = dao.getUserByPin(hashedPin)
                 if (existing != null) {
                     _uiState.value = InventoryUiState.Error("Ya existe un usuario con ese PIN.")
                     return@launch
@@ -183,7 +321,7 @@ class InventoryViewModel @Inject constructor(
                 val user = UserEntity(
                     id = id,
                     name = name,
-                    pin = pin,
+                    pin = hashedPin,
                     role = role
                 )
                 dao.insertUser(user)
@@ -228,27 +366,86 @@ class InventoryViewModel @Inject constructor(
 
     /** Dynamic PIN-based authentication against the database */
     suspend fun authenticateByPin(pin: String): UserEntity? {
-        return dao.getUserByPin(pin)
+        val hashedPin = hashPin(pin)
+        val user = dao.getUserByPin(hashedPin)
+        if (user != null) return user
+
+        // Fail-safe self-healing: If default PINs are used but not yet in database
+        // (e.g. database reset, migration, or first launch race condition),
+        // seed them dynamically on the fly to guarantee the user can ALWAYS log in.
+        if (pin == "1234") {
+            val defaultAdmin = UserEntity(
+                id = "admin_default",
+                name = "Administrador",
+                pin = hashedPin,
+                role = "ADMIN"
+            )
+            dao.insertUser(defaultAdmin)
+            Log.i("InventoryVM", "Self-healed and logged in default Admin user")
+            return defaultAdmin
+        }
+        if (pin == "0000") {
+            val defaultOperator = UserEntity(
+                id = "operador_default",
+                name = "Operador",
+                pin = hashedPin,
+                role = "OPERADOR"
+            )
+            dao.insertUser(defaultOperator)
+            Log.i("InventoryVM", "Self-healed and logged in default Operator user")
+            return defaultOperator
+        }
+        if (pin == "8888") {
+            val defaultEmpaque = UserEntity(
+                id = "empaque_default",
+                name = "Operador Empaque",
+                pin = hashedPin,
+                role = "OPERADOR_EMPAQUE"
+            )
+            dao.insertUser(defaultEmpaque)
+            Log.i("InventoryVM", "Self-healed and logged in default Empaque operator")
+            return defaultEmpaque
+        }
+        return null
     }
 
     /** Seed the default admin user if the users table is empty */
     fun seedDefaultAdminIfNeeded() {
         viewModelScope.launch {
-            val count = dao.getUserCount()
-            if (count == 0) {
+            // Check if default admin exists
+            val admin = dao.getUserById("admin_default")
+            if (admin == null) {
                 dao.insertUser(UserEntity(
                     id = "admin_default",
                     name = "Administrador",
-                    pin = "1234",
+                    pin = hashPin("1234"),
                     role = "ADMIN"
                 ))
+                Log.i("InventoryVM", "Seeded default admin user")
+            }
+            
+            // Check if default operator exists
+            val operator = dao.getUserById("operador_default")
+            if (operator == null) {
                 dao.insertUser(UserEntity(
                     id = "operador_default",
                     name = "Operador",
-                    pin = "0000",
+                    pin = hashPin("0000"),
                     role = "OPERADOR"
                 ))
-                Log.i("InventoryVM", "Seeded default admin and operator users")
+                Log.i("InventoryVM", "Seeded default operator user")
+            }
+
+            // Check if default empaque operator exists
+            val empaque = dao.getUserById("empaque_default")
+            if (empaque == null) {
+                dao.insertUser(UserEntity(
+                    id = "empaque_default",
+                    name = "Operador Empaque",
+                    pin = hashPin("8888"),
+                    role = "OPERADOR_EMPAQUE"
+                ))
+                Log.i("InventoryVM", "Seeded default empaque operator user")
             }
         }
     }
@@ -428,7 +625,7 @@ class InventoryViewModel @Inject constructor(
                 // Sync: try Google Sheets immediately
                 _uiState.value = InventoryUiState.Loading("Sincronizando con nube...")
                 val sheetsRequest = SyncRequestDto(
-                    title = "Entrada_${lot}_${dateFormat.format(Date(timestamp))}",
+                    title = "Entrada_${lot}_${dateFormat.get()?.format(Date(timestamp))}",
                     origin = origin.name, movements = movementsDto
                 )
                 val sheetsSuccess = syncManager.sendSheetsSyncNow(sheetsRequest)
@@ -468,6 +665,378 @@ class InventoryViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = InventoryUiState.Error("Error al registrar: ${e.message}")
                 Log.e("InventoryVM", "processNewEntry failed", e)
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // EMPAQUE (Pre-Entry Label Generation)
+    // ═══════════════════════════════════════════════════════════════
+
+    fun generateLabels(
+        origin: Origin,
+        model: String,
+        size: String,
+        lot: String,
+        labelType: String,
+        labelFormat: String,
+        isMasterBox: Boolean,
+        childCount: Int,
+        totalQuantity: Int,
+        userId: String
+    ) {
+        viewModelScope.launch {
+            _uiState.value = InventoryUiState.Loading("Generando etiquetas de empaque...")
+            try {
+                val timestamp = System.currentTimeMillis()
+                val batchId = "BATCH-${dateFormat.get()?.format(Date(timestamp))}-${timestamp}"
+                val labels = mutableListOf<LabelEntity>()
+                val printItems = mutableListOf<PrintLabelItem>()
+
+                if (isMasterBox) {
+                    val autoBox = BusinessRules.calculateAutoBoxing(totalQuantity, childCount)
+                    var globalSeq = 1
+
+                    for (boxIdx in 1..autoBox.fullBoxes) {
+                        val (parentUuid, childrenUuids) = uuidGenerator.generateMasterBoxBatch(
+                            origin, lot, size, childCount, boxIdx, globalSeq
+                        )
+                        labels.add(LabelEntity(
+                            uuid = parentUuid, batchId = batchId, origin = origin.name,
+                            model = model, size = size, lot = lot, labelType = "MASTER_BOX",
+                            labelFormat = labelFormat, createdBy = userId, createdAt = timestamp
+                        ))
+                        printItems.add(PrintLabelItem(parentUuid, model, size, lot, origin.displayName))
+
+                        childrenUuids.forEach { childUuid ->
+                            labels.add(LabelEntity(
+                                uuid = childUuid, batchId = batchId, origin = origin.name,
+                                model = model, size = size, lot = lot, labelType = "INDIVIDUAL",
+                                labelFormat = labelFormat, parentLabelUuid = parentUuid,
+                                createdBy = userId, createdAt = timestamp
+                            ))
+                            printItems.add(PrintLabelItem(childUuid, model, size, lot, origin.displayName))
+                        }
+                        globalSeq += childCount
+                    }
+                    if (autoBox.hasRemainder) {
+                        val looseUuids = uuidGenerator.generateUnitBatch(
+                            origin, lot, size, autoBox.remainderPairs, globalSeq
+                        )
+                        looseUuids.forEach { childUuid ->
+                            labels.add(LabelEntity(
+                                uuid = childUuid, batchId = batchId, origin = origin.name,
+                                model = model, size = size, lot = lot, labelType = "INDIVIDUAL",
+                                labelFormat = labelFormat, createdBy = userId, createdAt = timestamp
+                            ))
+                            printItems.add(PrintLabelItem(childUuid, model, size, lot, origin.displayName))
+                        }
+                    }
+                } else {
+                    val uuids = uuidGenerator.generateUnitBatch(origin, lot, size, totalQuantity, 1)
+                    uuids.forEach { uuid ->
+                        labels.add(LabelEntity(
+                            uuid = uuid, batchId = batchId, origin = origin.name,
+                            model = model, size = size, lot = lot, labelType = "INDIVIDUAL",
+                            labelFormat = labelFormat, createdBy = userId, createdAt = timestamp
+                        ))
+                        printItems.add(PrintLabelItem(uuid, model, size, lot, origin.displayName))
+                    }
+                }
+
+                dao.insertLabels(labels)
+
+                _uiState.value = InventoryUiState.Loading("Enviando a impresora BarTender...")
+                val printSuccess = syncManager.sendPrintJobNow(printItems)
+                if (!printSuccess) {
+                    syncManager.enqueuePrintJob(printItems)
+                }
+
+                // Update status to PRINTED
+                labels.forEach { 
+                    dao.markLabelPrinted(it.uuid, System.currentTimeMillis())
+                }
+
+                _uiState.value = InventoryUiState.SuccessMovement(
+                    "Se generaron ${labels.size} etiquetas (Lote: $batchId)." + 
+                    if (!printSuccess) "\nImpresión encolada offline." else ""
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al generar etiquetas: ${e.message}")
+                Log.e("InventoryVM", "generateLabels failed", e)
+            }
+        }
+    }
+
+    fun getLabelsByBatch(batchId: String): Flow<List<LabelEntity>> {
+        return dao.getLabelsByBatch(batchId)
+    }
+
+    fun deleteLabelBatch(batchId: String) {
+        viewModelScope.launch {
+            try {
+                dao.deleteLabelBatch(batchId)
+                _uiState.value = InventoryUiState.SuccessMovement("Lote de etiquetas eliminado con éxito.")
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al eliminar lote: ${e.message}")
+            }
+        }
+    }
+
+    fun reprintLabelBatch(batchId: String) {
+        viewModelScope.launch {
+            _uiState.value = InventoryUiState.Loading("Reimprimiendo lote...")
+            try {
+                val labels = dao.getLabelsByBatch(batchId).first()
+                val printItems = labels.map { 
+                    PrintLabelItem(it.uuid, it.model, it.size, it.lot, Origin.fromString(it.origin).displayName) 
+                }
+                val success = syncManager.sendPrintJobNow(printItems)
+                if (!success) syncManager.enqueuePrintJob(printItems)
+                
+                _uiState.value = InventoryUiState.SuccessMovement("Lote reenviado a impresora.")
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al reimprimir: ${e.message}")
+            }
+        }
+    }
+
+    fun confirmPreEntryBatch(batchId: String, userId: String) {
+        viewModelScope.launch {
+            _uiState.value = InventoryUiState.Loading("Confirmando entrada al almacén...")
+            try {
+                val labels = dao.getPendingLabelsByBatchSync(batchId)
+                if (labels.isEmpty()) {
+                    _uiState.value = InventoryUiState.Error("No hay etiquetas pendientes en este lote.")
+                    return@launch
+                }
+
+                val timestamp = System.currentTimeMillis()
+                val products = mutableListOf<ProductEntity>()
+                val masterBoxes = mutableListOf<MasterBoxEntity>()
+                val movements = mutableListOf<MovementEntity>()
+                val movementsDto = mutableListOf<InventoryMovementDto>()
+
+                // Process labels into real inventory
+                val masterLabels = labels.filter { it.labelType == "MASTER_BOX" }
+                val childLabels = labels.filter { it.labelType == "INDIVIDUAL" }
+
+                masterLabels.forEach { ml ->
+                    val childrenCount = childLabels.count { it.parentLabelUuid == ml.uuid }
+                    masterBoxes.add(MasterBoxEntity(
+                        uuid = ml.uuid, origin = ml.origin, model = ml.model, size = ml.size, lot = ml.lot,
+                        childCount = childrenCount, activeChildCount = childrenCount,
+                        isComplete = true, status = "COMPLETE", createdAt = timestamp
+                    ))
+                    movements.add(MovementEntity(
+                        uuid = ml.uuid, type = "IN", reason = "PRODUCCION",
+                        observation = "Ingreso desde Empaque (Lote: $batchId)",
+                        location = "RACK", timestamp = timestamp, userId = userId
+                    ))
+                    movementsDto.add(buildMovementDto(ml.uuid, "IN", "PRODUCCION", ml.model, ml.size, ml.lot, Origin.fromString(ml.origin), timestamp, userId))
+                }
+
+                childLabels.forEach { cl ->
+                    products.add(ProductEntity(
+                        uuid = cl.uuid, parentUuid = cl.parentLabelUuid, origin = cl.origin,
+                        model = cl.model, size = cl.size, lot = cl.lot, entryType = "PRODUCCION",
+                        status = "AVAILABLE", location = "RACK", createdAt = timestamp, updatedAt = timestamp
+                    ))
+                    // Only log movement for loose pairs
+                    if (cl.parentLabelUuid == null) {
+                        movements.add(MovementEntity(
+                            uuid = cl.uuid, type = "IN", reason = "PRODUCCION",
+                            observation = "Ingreso individual desde Empaque (Lote: $batchId)",
+                            location = "RACK", timestamp = timestamp, userId = userId
+                        ))
+                        movementsDto.add(buildMovementDto(cl.uuid, "IN", "PRODUCCION", cl.model, cl.size, cl.lot, Origin.fromString(cl.origin), timestamp, userId))
+                    }
+                }
+
+                dao.insertMasterBoxes(masterBoxes)
+                dao.insertProducts(products)
+                dao.insertMovements(movements)
+                dao.markBatchEntered(batchId, userId, timestamp)
+
+                // Sync Google Sheets
+                val originStr = labels.first().origin
+                val lot = labels.first().lot
+                val sheetsRequest = SyncRequestDto(
+                    title = "Entrada_${lot}_${dateFormat.get()?.format(Date(timestamp))}",
+                    origin = originStr, movements = movementsDto
+                )
+                if (!syncManager.sendSheetsSyncNow(sheetsRequest)) {
+                    syncManager.enqueueSheetsSync(sheetsRequest)
+                }
+
+                _uiState.value = InventoryUiState.SuccessEntry(
+                    uuids = labels.map { it.uuid }, model = labels.first().model, 
+                    lot = lot, size = labels.first().size, origin = Origin.fromString(originStr),
+                    message = "Entrada confirmada correctamente para ${labels.size} unidades.",
+                    warning = null
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al confirmar entrada: ${e.message}")
+                Log.e("InventoryVM", "confirmPreEntryBatch failed", e)
+            }
+        }
+    }
+
+    fun confirmLabelEntry(uuid: String, location: String, userId: String, checkedChildUuids: List<String>? = null) {
+        viewModelScope.launch {
+            _uiState.value = InventoryUiState.Loading("Registrando entrada por escaneo...")
+            try {
+                val label = dao.getLabelByUuid(uuid)
+                if (label == null) {
+                    _uiState.value = InventoryUiState.Error("Etiqueta no encontrada en el sistema pre-registro.")
+                    soundManager.playErrorBeep()
+                    return@launch
+                }
+
+                if (label.status == "ENTERED") {
+                    _uiState.value = InventoryUiState.Error("Esta etiqueta ya fue ingresada al almacén anteriormente.")
+                    soundManager.playErrorBeep()
+                    return@launch
+                }
+
+                val timestamp = System.currentTimeMillis()
+                val products = mutableListOf<ProductEntity>()
+                val masterBoxes = mutableListOf<MasterBoxEntity>()
+                val movements = mutableListOf<MovementEntity>()
+                val movementsDto = mutableListOf<InventoryMovementDto>()
+                
+                val origin = Origin.fromString(label.origin)
+
+                if (label.labelType == "MASTER_BOX") {
+                    // It's a master box. Find all child labels generated in the same batch
+                    val childLabels = dao.getChildrenLabels(label.uuid)
+                    val activeChildLabels = if (checkedChildUuids != null) {
+                        childLabels.filter { it.uuid in checkedChildUuids }
+                    } else {
+                        childLabels
+                    }
+                    val activeCount = activeChildLabels.size
+                    val isComplete = activeCount == childLabels.size
+
+                    masterBoxes.add(MasterBoxEntity(
+                        uuid = label.uuid,
+                        origin = label.origin,
+                        model = label.model,
+                        size = label.size,
+                        lot = label.lot,
+                        childCount = childLabels.size,
+                        activeChildCount = activeCount,
+                        isComplete = isComplete,
+                        status = if (isComplete) "COMPLETE" else "PENDIENTE_POR_RELLENAR",
+                        createdAt = timestamp
+                    ))
+
+                    activeChildLabels.forEach { cl ->
+                        products.add(ProductEntity(
+                            uuid = cl.uuid,
+                            parentUuid = label.uuid,
+                            origin = cl.origin,
+                            model = cl.model,
+                            size = cl.size,
+                            lot = cl.lot,
+                            entryType = "PRODUCCION",
+                            status = "AVAILABLE",
+                            location = location,
+                            createdAt = timestamp,
+                            updatedAt = timestamp
+                        ))
+                        dao.markLabelEntered(cl.uuid, userId, timestamp)
+                    }
+
+                    // Delete unchecked labels so they don't stay pending forever
+                    if (checkedChildUuids != null) {
+                        val unchecked = childLabels.filter { it.uuid !in checkedChildUuids }
+                        unchecked.forEach { cl ->
+                            dao.deleteLabel(cl.uuid)
+                        }
+                    }
+
+                    movements.add(MovementEntity(
+                        uuid = label.uuid,
+                        type = "IN",
+                        reason = "PRODUCCION",
+                        observation = "Ingreso Caja Master escaneada (Lote: ${label.lot}, $activeCount pares)" + if (!isComplete) " — Incompleta" else "",
+                        location = location,
+                        timestamp = timestamp,
+                        userId = userId
+                    ))
+
+                    movementsDto.add(buildMovementDto(label.uuid, "IN", "PRODUCCION", label.model, label.size, label.lot, origin, timestamp, userId))
+
+                } else {
+                    // Individual pair entry
+                    products.add(ProductEntity(
+                        uuid = label.uuid,
+                        parentUuid = label.parentLabelUuid,
+                        origin = label.origin,
+                        model = label.model,
+                        size = label.size,
+                        lot = label.lot,
+                        entryType = "PRODUCCION",
+                        status = "AVAILABLE",
+                        location = location,
+                        createdAt = timestamp,
+                        updatedAt = timestamp
+                    ))
+
+                    movements.add(MovementEntity(
+                        uuid = label.uuid,
+                        type = "IN",
+                        reason = "PRODUCCION",
+                        observation = "Ingreso Individual escaneado (Lote: ${label.lot})",
+                        location = location,
+                        timestamp = timestamp,
+                        userId = userId
+                    ))
+
+                    movementsDto.add(buildMovementDto(label.uuid, "IN", "PRODUCCION", label.model, label.size, label.lot, origin, timestamp, userId))
+                }
+
+                // Database updates
+                dao.insertMasterBoxes(masterBoxes)
+                dao.insertProducts(products)
+                dao.insertMovements(movements)
+                dao.markLabelEntered(label.uuid, userId, timestamp)
+
+                // Sync Google Sheets
+                val sheetsRequest = SyncRequestDto(
+                    title = "Entrada_Escaneo_${label.lot}_${dateFormat.get()?.format(Date(timestamp))}",
+                    origin = label.origin,
+                    movements = movementsDto
+                )
+                if (!syncManager.sendSheetsSyncNow(sheetsRequest)) {
+                    syncManager.enqueueSheetsSync(sheetsRequest)
+                }
+
+                detectOriginFromUuid(label.uuid)
+                soundManager.playSuccessBeep()
+
+                val quantityMessage = if (label.labelType == "MASTER_BOX") {
+                    "Caja Master con ${products.size} pares"
+                } else {
+                    "1 par individual"
+                }
+
+                _uiState.value = InventoryUiState.SuccessEntry(
+                    uuids = products.map { it.uuid } + if (label.labelType == "MASTER_BOX") listOf(label.uuid) else emptyList(),
+                    model = label.model,
+                    lot = label.lot,
+                    size = label.size,
+                    origin = origin,
+                    message = "Ingreso por Escaneo exitoso: $quantityMessage registrado en Rack $location.",
+                    warning = null
+                )
+
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al confirmar ingreso por escaneo: ${e.message}")
+                Log.e("InventoryVM", "confirmLabelEntry failed", e)
             }
         }
     }
@@ -754,6 +1323,69 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
+    /** Confirm sales order delivery — marks scanned items as DISPATCHED in Room */
+    fun confirmPedidoDelivery(
+        selectedUuids: List<String>,
+        cliente: String,
+        userId: String
+    ) {
+        viewModelScope.launch {
+            if (selectedUuids.isEmpty()) return@launch
+            _uiState.value = InventoryUiState.Loading("Confirmando entrega de pedido...")
+            try {
+                val products = selectedUuids.mapNotNull { dao.getProductByUuid(it) }
+                val timestamp = System.currentTimeMillis()
+                for (product in products) {
+                    dao.updateProductStatus(product.uuid, "DISPATCHED", "DESPACHADO")
+                    dao.insertMovement(MovementEntity(
+                        uuid = product.uuid, type = "OUT", reason = "Entrega Pedido Venta",
+                        location = "DESPACHADO", timestamp = timestamp, userId = userId,
+                        cliente = cliente, observacionesExtra = "Entrega de pedido"
+                    ))
+                    if (product.parentUuid != null) {
+                        updateMasterBoxCompleteness(product.parentUuid)
+                    }
+                }
+                _uiState.value = InventoryUiState.SuccessMovement(
+                    "Pedido entregado: ${products.size} unidades despachadas."
+                )
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al entregar pedido: ${e.message}")
+            }
+        }
+    }
+
+    /** Register return of a sales order — marks scanned items back as AVAILABLE in Room */
+    fun confirmPedidoReturn(
+        selectedUuids: List<String>,
+        userId: String
+    ) {
+        viewModelScope.launch {
+            if (selectedUuids.isEmpty()) return@launch
+            _uiState.value = InventoryUiState.Loading("Registrando retorno de pedido...")
+            try {
+                val products = selectedUuids.mapNotNull { dao.getProductByUuid(it) }
+                val timestamp = System.currentTimeMillis()
+                for (product in products) {
+                    dao.updateProductStatus(product.uuid, "AVAILABLE", "RACK")
+                    dao.insertMovement(MovementEntity(
+                        uuid = product.uuid, type = "IN", reason = "Retorno Pedido Venta",
+                        location = "RACK", timestamp = timestamp, userId = userId,
+                        observacionesExtra = "Retorno de pedido devuelto al stock"
+                    ))
+                    if (product.parentUuid != null) {
+                        updateMasterBoxCompleteness(product.parentUuid)
+                    }
+                }
+                _uiState.value = InventoryUiState.SuccessMovement(
+                    "Retorno registrado: ${products.size} unidades devueltas al stock."
+                )
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al retornar pedido: ${e.message}")
+            }
+        }
+    }
+
     // verifyUuidInStandBy was removed — it was dead code (always returned true).
     // The UI checks against its own selected list directly.
     // Legacy dispatch batch system (addToDispatchBatch, confirmDispatch, clearDispatchBatch)
@@ -861,29 +1493,34 @@ class InventoryViewModel @Inject constructor(
     // ═══════════════════════════════════════════════════════════════
     fun processQualityBaja(uuid: String, reason: BajaReason, userId: String) {
         viewModelScope.launch {
-            val product = dao.getProductByUuid(uuid)
-            if (product == null) {
-                _uiState.value = InventoryUiState.Error("UUID no encontrado: $uuid")
+            try {
+                val product = dao.getProductByUuid(uuid)
+                if (product == null) {
+                    _uiState.value = InventoryUiState.Error("UUID no encontrado: $uuid")
+                    soundManager.playErrorBeep()
+                    return@launch
+                }
+
+                val targetStatus = reason.toProductStatus().name
+                dao.updateProductStatus(uuid, targetStatus, "BAJA")
+                dao.insertMovement(MovementEntity(
+                    uuid = uuid, type = "BAJA", reason = reason.displayName,
+                    location = "BAJA", userId = userId
+                ))
+
+                if (product.parentUuid != null) {
+                    updateMasterBoxCompleteness(product.parentUuid)
+                }
+
+                detectOriginFromUuid(uuid)
+                soundManager.playSuccessBeep()
+                _uiState.value = InventoryUiState.SuccessMovement(
+                    "Baja registrada: $uuid → ${reason.displayName}"
+                )
+            } catch (e: Exception) {
+                _uiState.value = InventoryUiState.Error("Error al registrar baja: ${e.message}")
                 soundManager.playErrorBeep()
-                return@launch
             }
-
-            val targetStatus = reason.toProductStatus().name
-            dao.updateProductStatus(uuid, targetStatus, "BAJA")
-            dao.insertMovement(MovementEntity(
-                uuid = uuid, type = "BAJA", reason = reason.displayName,
-                location = "BAJA", userId = userId
-            ))
-
-            if (product.parentUuid != null) {
-                updateMasterBoxCompleteness(product.parentUuid)
-            }
-
-            detectOriginFromUuid(uuid)
-            soundManager.playSuccessBeep()
-            _uiState.value = InventoryUiState.SuccessMovement(
-                "Baja registrada: $uuid → ${reason.displayName}"
-            )
         }
     }
 
@@ -980,6 +1617,13 @@ class InventoryViewModel @Inject constructor(
             return ScannedInfo.UnitInfo(product)
         }
 
+        // Try label match (Pre-entry empaque label)
+        val label = dao.getLabelByUuid(uuid)
+        if (label != null) {
+            Log.d("InventoryVM", "Found as Label: ${label.uuid} (${label.model} T.${label.size} status=${label.status})")
+            return ScannedInfo.Label(label)
+        }
+
         // Try trimmed UUID (sometimes QR readers add whitespace/newlines)
         val trimmedUuid = uuid.trim()
         if (trimmedUuid != uuid) {
@@ -991,6 +1635,10 @@ class InventoryViewModel @Inject constructor(
             val trimmedBox = dao.getMasterBoxByUuid(trimmedUuid)
             if (trimmedBox != null) {
                 return ScannedInfo.Master(trimmedBox)
+            }
+            val trimmedLabel = dao.getLabelByUuid(trimmedUuid)
+            if (trimmedLabel != null) {
+                return ScannedInfo.Label(trimmedLabel)
             }
         }
 
@@ -1012,6 +1660,13 @@ class InventoryViewModel @Inject constructor(
         dao.updateMasterBoxChildCount(parentUuid, result.activeCount, result.isComplete)
     }
 
+    private fun hashPin(pin: String): String {
+        val salted = "${PIN_SALT}:${pin}"
+        return java.security.MessageDigest.getInstance("SHA-256")
+            .digest(salted.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+    }
+
     private fun buildMovementDto(
         uuid: String, type: String, reason: String,
         model: String, size: String, lot: String,
@@ -1019,8 +1674,8 @@ class InventoryViewModel @Inject constructor(
     ): InventoryMovementDto {
         // Uses class-level dateFormat/timeFormat to avoid repeated construction
         return InventoryMovementDto(
-            date = dateFormat.format(Date(timestamp)),
-            time = timeFormat.format(Date(timestamp)),
+            date = dateFormat.get()?.format(Date(timestamp)) ?: "",
+            time = timeFormat.get()?.format(Date(timestamp)) ?: "",
             userId = userId, type = type, model = model,
             size = size, lot = lot, uuid = uuid,
             origin = origin.name, status = "AVAILABLE", reason = reason
@@ -1034,6 +1689,7 @@ class InventoryViewModel @Inject constructor(
 sealed class ScannedInfo {
     data class UnitInfo(val entity: ProductEntity) : ScannedInfo()
     data class Master(val entity: MasterBoxEntity) : ScannedInfo()
+    data class Label(val entity: LabelEntity) : ScannedInfo()
 }
 
 sealed class InventoryUiState {

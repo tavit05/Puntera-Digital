@@ -31,8 +31,7 @@ class PrinterPreferences @Inject constructor(
         private const val DEFAULT_TIMEOUT = 10
     }
 
-    private val prefs: SharedPreferences
-        get() = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     var serverIp: String
         get() = prefs.getString(KEY_IP, DEFAULT_IP) ?: DEFAULT_IP

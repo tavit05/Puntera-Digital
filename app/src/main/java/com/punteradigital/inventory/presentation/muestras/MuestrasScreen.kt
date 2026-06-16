@@ -263,6 +263,10 @@ fun MuestrasScreen(
 
             // Snackbar
             if (uiState is InventoryUiState.SuccessMovement) {
+                androidx.compose.runtime.LaunchedEffect(uiState) {
+                    kotlinx.coroutines.delay(3000)
+                    viewModel.resetUiState()
+                }
                 val state = uiState as InventoryUiState.SuccessMovement
                 Snackbar(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
@@ -277,6 +281,10 @@ fun MuestrasScreen(
             }
 
             if (uiState is InventoryUiState.Error) {
+                androidx.compose.runtime.LaunchedEffect(uiState) {
+                    kotlinx.coroutines.delay(4000)
+                    viewModel.resetUiState()
+                }
                 val state = uiState as InventoryUiState.Error
                 Snackbar(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
@@ -299,7 +307,7 @@ fun MuestraItemCard(
     onReturn: () -> Unit,
     onSell: () -> Unit
 ) {
-    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val sdf = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
     val dateStr = sdf.format(Date(product.updatedAt))
 
     KineticCard(

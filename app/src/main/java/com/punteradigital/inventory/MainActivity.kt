@@ -5,7 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import kotlin.math.absoluteValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -30,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.punteradigital.inventory.domain.model.Origin
 import com.punteradigital.inventory.presentation.auth.LoginScreen
 import com.punteradigital.inventory.presentation.dashboard.DashboardScreen
@@ -113,7 +125,11 @@ class MainActivity : ComponentActivity() {
 @Serializable object BoxingConfigRoute
 @Serializable object SyncConfigRoute
 @Serializable object PedidoCreateRoute
+@Serializable object PedidoListRoute
 @Serializable data class PedidoDetailRoute(val pedidoIndex: Int)
+@Serializable object EmpaqueRoute
+@Serializable object TransferRoute
+@Serializable object AuditRoute
 
 @Composable
 fun PunteraApp(
@@ -127,15 +143,42 @@ fun PunteraApp(
     NavHost(
         navController = navController,
         startDestination = Login,
-        enterTransition = { fadeIn(animationSpec = tween(300)) },
-        exitTransition = { fadeOut(animationSpec = tween(300)) }
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeIn(animationSpec = tween(300))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeOut(animationSpec = tween(300))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeIn(animationSpec = tween(300))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeOut(animationSpec = tween(300))
+        }
     ) {
         composable<Login> {
             LoginScreen(
                 viewModel = viewModel,
                 onLoginSuccess = { user ->
                     viewModel.setCurrentUser(user)
-                    navController.navigate(MainHub) {
+                    val nextRoute = if (user.role == "OPERADOR_EMPAQUE" || user.role == "SUPERVISOR_EMPAQUE") {
+                        EmpaqueRoute
+                    } else {
+                        MainHub
+                    }
+                    navController.navigate(nextRoute) {
                         popUpTo(Login) { inclusive = true }
                     }
                 }
@@ -181,11 +224,17 @@ fun PunteraApp(
                 onNavigateToSync = {
                     navController.navigate(SyncConfigRoute)
                 },
-                onNavigateToPedidoCreate = {
-                    navController.navigate(PedidoCreateRoute)
+                onNavigateToPedidoList = {
+                    navController.navigate(PedidoListRoute)
                 },
-                onNavigateToPedidoDetail = { index ->
-                    navController.navigate(PedidoDetailRoute(index))
+                onNavigateToEmpaque = {
+                    navController.navigate(EmpaqueRoute)
+                },
+                onNavigateToTransfer = {
+                    navController.navigate(TransferRoute)
+                },
+                onNavigateToAudit = {
+                    navController.navigate(AuditRoute)
                 },
                 onLogout = {
                     viewModel.logout()
@@ -196,13 +245,11 @@ fun PunteraApp(
             )
         }
         composable<ScannerRoute> { backStackEntry ->
-            val route = backStackEntry.arguments
-            val mode = route?.getString("mode") ?: "STANDBY"
-            val scanType = route?.getString("scanType") ?: "MANUAL"
+            val route = backStackEntry.toRoute<ScannerRoute>()
             UnifiedScannerScreen(
                 viewModel = viewModel,
-                moduleName = mode,
-                scanType = scanType,
+                moduleName = route.mode,
+                scanType = route.scanType,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -212,6 +259,31 @@ fun PunteraApp(
                 onBack = { navController.popBackStack() },
                 onVerifyScan = {
                     navController.navigate(ScannerRoute("VERIFY", "MANUAL"))
+                }
+            )
+        }
+        composable<EmpaqueRoute> {
+            com.punteradigital.inventory.presentation.empaque.EmpaqueScreen(
+                viewModel = viewModel,
+                onBack = {
+                    val currentUser = viewModel.currentUser.value
+                    if (currentUser?.role == "OPERADOR_EMPAQUE" || currentUser?.role == "SUPERVISOR_EMPAQUE") {
+                        viewModel.logout()
+                        navController.navigate(Login) {
+                            popUpTo(EmpaqueRoute) { inclusive = true }
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
+                onNavigateToPrinter = {
+                    navController.navigate(PrinterConfigRoute)
+                },
+                onNavigateToQRHistory = {
+                    navController.navigate(QRHistoryRoute)
+                },
+                onNavigateToScanner = { mode, scanType ->
+                    navController.navigate(ScannerRoute(mode, scanType))
                 }
             )
         }
@@ -261,10 +333,9 @@ fun PunteraApp(
             )
         }
         composable<CatalogEditRoute> { backStackEntry ->
-            val route = backStackEntry.arguments
-            val itemId = route?.getString("itemId")
+            val route = backStackEntry.toRoute<CatalogEditRoute>()
             CatalogEditScreen(
-                itemId = itemId,
+                itemId = route.itemId,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -315,14 +386,37 @@ fun PunteraApp(
                 currentUserName = currentUser?.name ?: "Usuario"
             )
         }
+        composable<PedidoListRoute> {
+            val currentUser by viewModel.currentUser.collectAsState()
+            PedidoListScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToCreate = { navController.navigate(PedidoCreateRoute) },
+                onNavigateToDetail = { index ->
+                    navController.navigate(PedidoDetailRoute(index))
+                },
+                currentUserRole = currentUser?.role ?: "ADMIN"
+            )
+        }
         composable<PedidoDetailRoute> { backStackEntry ->
-            val route = backStackEntry.arguments
-            val pedidoIndex = route?.getInt("pedidoIndex") ?: 0
+            val route = backStackEntry.toRoute<PedidoDetailRoute>()
             val currentUser by viewModel.currentUser.collectAsState()
             PedidoDetailScreen(
-                pedidoIndex = pedidoIndex,
+                pedidoIndex = route.pedidoIndex,
                 onBack = { navController.popBackStack() },
-                currentUserName = currentUser?.name ?: "Usuario"
+                currentUserName = currentUser?.name ?: "Usuario",
+                viewModel = viewModel
+            )
+        }
+        composable<TransferRoute> {
+            com.punteradigital.inventory.presentation.transfer.TransferScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<AuditRoute> {
+            com.punteradigital.inventory.presentation.audit.AuditScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
             )
         }
     }
@@ -345,8 +439,10 @@ fun MainDashboard(
     onNavigateToSizeTable: () -> Unit = {},
     onNavigateToBoxing: () -> Unit = {},
     onNavigateToSync: () -> Unit = {},
-    onNavigateToPedidoCreate: () -> Unit = {},
-    onNavigateToPedidoDetail: (Int) -> Unit = {},
+    onNavigateToPedidoList: () -> Unit = {},
+    onNavigateToEmpaque: () -> Unit = {},
+    onNavigateToTransfer: () -> Unit = {},
+    onNavigateToAudit: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val origin by viewModel.currentOrigin.collectAsState()
@@ -401,37 +497,55 @@ fun MainDashboard(
                 // each subscribing their own DB flows even when off-screen.
                 beyondViewportPageCount = 0
             ) { page ->
-                when (page) {
-                    0 -> HomeScreen(
-                        viewModel = viewModel,
-                        onNavigateToEntry = { selectedTab = 1 },
-                        onNavigateToMovements = { selectedTab = 2 },
-                        onNavigateToRefill = onNavigateToRefill
-                    )
-                    1 -> EntryScreen(viewModel = viewModel)
-                    2 -> MovementHubScreen(
-                        viewModel = viewModel,
-                        onNavigateToScanner = onNavigateToScanner,
-                        onNavigateToDispatchList = onNavigateToDispatchList,
-                        onNavigateToMuestras = onNavigateToMuestras,
-                        onNavigateToPedidoCreate = onNavigateToPedidoCreate,
-                        onNavigateToPedidoDetail = onNavigateToPedidoDetail,
-                        currentUserRole = currentUser?.role ?: "ADMIN"
-                    )
-                    3 -> TraceabilityScreen(viewModel = viewModel)
-                    4 -> SettingsScreen(
-                        onNavigateToCatalog = onNavigateToCatalog,
-                        onNavigateToPrinter = onNavigateToPrinter,
-                        onNavigateToQRHistory = onNavigateToQRHistory,
-                        onNavigateToRackMap = onNavigateToRackMap,
-                        onNavigateToUsers = onNavigateToUsers,
-                        onNavigateToSizeTable = onNavigateToSizeTable,
-                        onNavigateToBoxing = onNavigateToBoxing,
-                        onNavigateToSync = onNavigateToSync,
-                        onLogout = onLogout,
-                        themePreferences = themePreferences,
-                        currentUser = currentUser
-                    )
+                val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            // Fade out off-screen pages smoothly
+                            alpha = (1f - (pageOffset.absoluteValue * 0.5f)).coerceIn(0f, 1f)
+                            // Scale down slightly to create a nice depth/layering effect
+                            val scale = (1f - (pageOffset.absoluteValue * 0.08f)).coerceIn(0.85f, 1f)
+                            scaleX = scale
+                            scaleY = scale
+                            // Parallax offset: shift the page a bit slower than the page swipe
+                            translationX = pageOffset * size.width * 0.2f
+                        }
+                ) {
+                    when (page) {
+                        0 -> HomeScreen(
+                            viewModel = viewModel,
+                            onNavigateToEntry = { selectedTab = 1 },
+                            onNavigateToMovements = { selectedTab = 2 },
+                            onNavigateToRefill = onNavigateToRefill
+                        )
+                        1 -> EntryScreen(viewModel = viewModel, onNavigateToScanner = onNavigateToScanner)
+                        2 -> MovementHubScreen(
+                            viewModel = viewModel,
+                            onNavigateToScanner = onNavigateToScanner,
+                            onNavigateToDispatchList = onNavigateToDispatchList,
+                            onNavigateToMuestras = onNavigateToMuestras,
+                            onNavigateToPedidoList = onNavigateToPedidoList,
+                            onNavigateToEmpaque = onNavigateToEmpaque,
+                            onNavigateToTransfer = onNavigateToTransfer,
+                            onNavigateToAudit = onNavigateToAudit,
+                            currentUserRole = currentUser?.role ?: "ADMIN"
+                        )
+                        3 -> TraceabilityScreen(viewModel = viewModel)
+                        4 -> SettingsScreen(
+                            onNavigateToCatalog = onNavigateToCatalog,
+                            onNavigateToPrinter = onNavigateToPrinter,
+                            onNavigateToQRHistory = onNavigateToQRHistory,
+                            onNavigateToRackMap = onNavigateToRackMap,
+                            onNavigateToUsers = onNavigateToUsers,
+                            onNavigateToSizeTable = onNavigateToSizeTable,
+                            onNavigateToBoxing = onNavigateToBoxing,
+                            onNavigateToSync = onNavigateToSync,
+                            onLogout = onLogout,
+                            themePreferences = themePreferences,
+                            currentUser = currentUser
+                        )
+                    }
                 }
             }
         }
@@ -448,13 +562,16 @@ fun MovementHubScreen(
     onNavigateToScanner: (String, String) -> Unit,
     onNavigateToDispatchList: () -> Unit,
     onNavigateToMuestras: () -> Unit,
-    onNavigateToPedidoCreate: () -> Unit = {},
-    onNavigateToPedidoDetail: (Int) -> Unit = {},
+    onNavigateToPedidoList: () -> Unit = {},
+    onNavigateToEmpaque: () -> Unit = {},
+    onNavigateToTransfer: () -> Unit = {},
+    onNavigateToAudit: () -> Unit = {},
     currentUserRole: String = "ADMIN"
 ) {
     val origin by viewModel.currentOrigin.collectAsState()
-    val pedidos = com.punteradigital.inventory.presentation.pedidos.PedidoRepository.pedidos
-    val canCreate = currentUserRole in listOf("ADMIN", "SUPERVISOR", "supervisor", "it")
+    var standByExpanded by remember { mutableStateOf(false) }
+    var dispatchExpanded by remember { mutableStateOf(false) }
+    var calidadExpanded by remember { mutableStateOf(false) }
 
     androidx.compose.foundation.lazy.LazyColumn(
         modifier = Modifier
@@ -471,16 +588,14 @@ fun MovementHubScreen(
             )
         }
 
-        // Pedidos de Venta — NEW, integrated here
-        item {
-            KineticCard(
-                modifier = Modifier.fillMaxWidth(),
-                padding = 20.dp
-            ) {
-                Row(
+        // ═══ EMPAQUE MODULE ═══
+        val allowedEmpaqueRoles = listOf("ADMIN", "SUPERVISOR_EMPAQUE", "OPERADOR_EMPAQUE", "SUPERVISOR_ALMACEN", "AUXILIAR_ALMACEN")
+        if (allowedEmpaqueRoles.any { currentUserRole.equals(it, ignoreCase = true) }) {
+            item {
+                KineticCard(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    onClick = onNavigateToEmpaque,
+                    padding = 20.dp
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -488,104 +603,31 @@ fun MovementHubScreen(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = DispatchGreen.copy(alpha = 0.15f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             modifier = Modifier.size(48.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("📦", fontSize = 28.sp)
+                                Text("🏷", fontSize = 28.sp)
                             }
                         }
                         Column {
-                            Text("Pedidos de Venta", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                            Text("Crear pedidos · Escanear para cumplir", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    if (canCreate) {
-                        FilledIconButton(
-                            onClick = onNavigateToPedidoCreate,
-                            modifier = Modifier.size(36.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.Add, "Nuevo", modifier = Modifier.size(20.dp))
-                        }
-                    }
-                }
-
-                if (pedidos.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Show pedido summary badges
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val pendientes = pedidos.count { it.status == "pendiente" }
-                        val enProceso = pedidos.count { it.status == "en-proceso" }
-                        if (pendientes > 0) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = StandByAmber.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    "$pendientes PENDIENTES",
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = StandByAmber
-                                )
-                            }
-                        }
-                        if (enProceso > 0) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = RefillBlue.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    "$enProceso EN PROCESO",
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = RefillBlue
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Show pedido cards (clickable to detail)
-                    pedidos.forEachIndexed { index, pedido ->
-                        com.punteradigital.inventory.presentation.pedidos.PedidoCard(
-                            pedido = pedido,
-                            onClick = { onNavigateToPedidoDetail(index) }
-                        )
-                        if (index < pedidos.lastIndex) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Área de Empaque", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Generar etiquetas · Pre-Entradas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             }
         }
 
-        // Stand-By — still uses scanner
-        item {
-            MovementCard(
-                title = "Stand-By",
-                subtitle = "Pre-despacho → ZONA_PREDESPACHO",
-                emoji = "⏸",
-                color = StandByAmber,
-                onManual = { onNavigateToScanner("STANDBY", "MANUAL") },
-                onRapid = { onNavigateToScanner("STANDBY", "RAPID") }
-            )
-        }
-
-        // Dispatch — now goes to checklist screen
+        // 📋 Pedidos de Venta
         item {
             KineticCard(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = onNavigateToDispatchList,
+                onClick = onNavigateToPedidoList,
                 padding = 20.dp
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -595,31 +637,127 @@ fun MovementHubScreen(
                         modifier = Modifier.size(48.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text("🚚", fontSize = 28.sp)
+                            Text("📦", fontSize = 28.sp)
                         }
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Despacho", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                        Text("Seleccionar items en Stand-By para salida", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Pedidos de Venta", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Crear pedidos · Escanear para cumplir", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
 
-        // Quality — still uses scanner
+        // 🔄 Traslado Interno
         item {
-            MovementCard(
-                title = "Calidad / Bajas",
-                subtitle = "Hidrolizado · Segunda · Daño Físico",
-                emoji = "⊖",
-                color = QualityPurple,
-                onManual = { onNavigateToScanner("QUALITY", "MANUAL") },
-                onRapid = { onNavigateToScanner("QUALITY", "RAPID") }
+            KineticCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onNavigateToTransfer,
+                padding = 20.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("🔄", fontSize = 28.sp)
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Traslado Interno", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Re-ubicar calzado de un rack a otro", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // 🔍 Auditoría de Racks
+        item {
+            KineticCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onNavigateToAudit,
+                padding = 20.dp
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("🔍", fontSize = 28.sp)
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Auditoría de Rack", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Conteo físico vs sistema y corrección", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // ⏳ Stand-By
+        item {
+            ExpandableMovementCard(
+                title = "Stand-By",
+                subtitle = "Pre-despacho → ZONA_PREDESPACHO",
+                emoji = "⏸",
+                color = StandByAmber,
+                expanded = standByExpanded,
+                onCardClick = { standByExpanded = !standByExpanded },
+                option1Text = "⚡ Ráfaga RFID",
+                onOption1Click = { onNavigateToScanner("STANDBY", "RAPID") },
+                option2Text = "📋 Cola Stand-By",
+                onOption2Click = onNavigateToDispatchList
             )
         }
 
-        // Muestras Retornables
+        // 🚚 Despacho
+        item {
+            ExpandableMovementCard(
+                title = "Despacho",
+                subtitle = "Salidas definitivas del almacén",
+                emoji = "🚚",
+                color = DispatchGreen,
+                expanded = dispatchExpanded,
+                onCardClick = { dispatchExpanded = !dispatchExpanded },
+                option1Text = "👆 Manual",
+                onOption1Click = onNavigateToDispatchList,
+                option2Text = "⚡ Salida RFID",
+                onOption2Click = { onNavigateToScanner("DISPATCH", "RAPID") }
+            )
+        }
+
+        // ⊖ Calidad / Bajas
+        item {
+            ExpandableMovementCard(
+                title = "Calidad / Bajas",
+                subtitle = "Inspección y mermas de mercancía",
+                emoji = "⊖",
+                color = QualityPurple,
+                expanded = calidadExpanded,
+                onCardClick = { calidadExpanded = !calidadExpanded },
+                option1Text = "👆 Manual",
+                onOption1Click = { onNavigateToScanner("QUALITY", "MANUAL") },
+                option2Text = "⚡ Inspección RFID",
+                onOption2Click = { onNavigateToScanner("QUALITY", "RAPID") }
+            )
+        }
+
+        // 🏪 Muestras Retornables
         item {
             KineticCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -641,7 +779,7 @@ fun MovementHubScreen(
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Muestras Retornables", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                        Text("Uso comercial, retornable al stock", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Uso comercial, devuelta al stock", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -651,53 +789,143 @@ fun MovementHubScreen(
 }
 
 @Composable
-fun MovementCard(
+fun SubMenuOptionCard(
+    text: String,
+    onClick: () -> Unit,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    // Extract emoji/symbol prefix from text
+    val emoji = text.takeWhile { !it.isLetterOrDigit() }.trim()
+    val cleanText = text.drop(emoji.length).trim()
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "press_scale"
+    )
+
+    Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(16.dp),
+        color = color.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.35f)),
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(vertical = 16.dp, horizontal = 12.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (emoji.isNotEmpty()) {
+                Text(
+                    text = emoji,
+                    fontSize = 22.sp
+                )
+            }
+            Text(
+                text = cleanText,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun ExpandableMovementCard(
     title: String,
     subtitle: String,
     emoji: String,
     color: Color,
-    onManual: () -> Unit,
-    onRapid: () -> Unit
+    expanded: Boolean,
+    onCardClick: () -> Unit,
+    option1Text: String,
+    onOption1Click: () -> Unit,
+    option2Text: String,
+    onOption2Click: () -> Unit
 ) {
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "arrow_rotation"
+    )
+
+    val cardModifier = if (expanded) {
+        Modifier.border(1.5.dp, color.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
+    } else {
+        Modifier
+    }
+
     KineticCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = cardModifier.fillMaxWidth(),
+        onClick = onCardClick,
         padding = 20.dp
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = color.copy(alpha = 0.15f),
-                modifier = Modifier.size(48.dp)
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(emoji, fontSize = 28.sp)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = color.copy(alpha = 0.15f),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(emoji, fontSize = 28.sp)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Colapsar" else "Expandir",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(arrowRotation)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        SubMenuOptionCard(
+                            text = option1Text,
+                            onClick = onOption1Click,
+                            color = color,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SubMenuOptionCard(
+                            text = option2Text,
+                            onClick = onOption2Click,
+                            color = color,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
-            Column {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            KineticButton(
-                text = "👆 Manual",
-                onClick = onManual,
-                modifier = Modifier.weight(1f),
-                type = ButtonType.SECONDARY
-            )
-
-            KineticButton(
-                text = "⚡ Ráfaga",
-                onClick = onRapid,
-                modifier = Modifier.weight(1f),
-                type = ButtonType.PRIMARY
-            )
         }
     }
 }

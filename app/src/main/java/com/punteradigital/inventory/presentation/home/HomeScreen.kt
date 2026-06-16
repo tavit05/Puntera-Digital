@@ -135,9 +135,12 @@ fun HomeScreen(
                         .padding(20.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
+                    val topModel = androidx.compose.runtime.remember(batchStatus) {
+                        batchStatus.maxByOrNull { it.count }?.model ?: "FS300CMFFPBL"
+                    }
                     Text("Selección Activa", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("FS300CMFFPBL", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = SpaceGrotesk)
+                    Text(topModel, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = SpaceGrotesk)
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         color = KineticSuccess.copy(alpha = 0.2f),
